@@ -9,7 +9,12 @@ import { Link } from '@inertiajs/vue3';
     >
         <div>
             <Link href="/">
-                <ApplicationLogo class="h-20 w-20 fill-current text-gray-500" />
+                <!-- <ApplicationLogo class="h-20 w-20 fill-current text-gray-500" /> -->
+                <div
+                            class="text-3xl font-bold text-indigo-600 dark:text-indigo-400"
+                        >
+                            Vendly Admin Login
+                        </div>
             </Link>
         </div>
 
