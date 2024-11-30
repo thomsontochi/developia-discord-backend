@@ -45,6 +45,13 @@ const showingNavigationDropdown = ref(false);
                                 >
                                     Products
                                 </NavLink>
+                                <!-- add category Navigation Links -->
+                                <NavLink
+                                    :href="route('categories.index')"
+                                    :active="route().current('categories.*')"
+                                >
+                                    Categories
+                                </NavLink>
                             </div>
                         </div>
 
@@ -157,6 +164,12 @@ const showingNavigationDropdown = ref(false);
                             :active="route().current('products.*')"
                         >
                             Products
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink
+                            :href="route('categories.index')"
+                            :active="route().current('categories.*')"
+                        >
+                            Categories
                         </ResponsiveNavLink>
                     </div>
 
