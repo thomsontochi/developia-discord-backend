@@ -19,6 +19,7 @@
         "vue": "^3.4.0"
     },
     "dependencies": {
+        "@heroicons/vue": "^2.2.0",
         "vue-toastification": "^2.0.0-rc.5"
     }
 }

@@ -4,14 +4,20 @@ import { router } from '@inertiajs/vue3';
 
 const props = defineProps({
     show: Boolean,
-    productId: Number,
+    categoryId: Number,
 });
 
 const emit = defineEmits(['close']);
 
-const deleteProduct = () => {
-    router.delete(route('products.destroy', props.productId), {
-        onSuccess: () => emit('close'),
+const deleteCategory = () => {
+    router.delete(route('categories.destroy', props.categoryId), {
+        onSuccess: () => {
+            emit('close');
+            // Optionally add a success message
+        },
+        onError: () => {
+            // Optionally handle errors
+        }
     });
 };
 </script>
@@ -28,11 +34,11 @@ const deleteProduct = () => {
                     <div class="sm:flex sm:items-start">
                         <div class="mt-3 text-center sm:mt-0 sm:text-left">
                             <h3 class="text-lg leading-6 font-medium text-gray-900">
-                                Delete Product
+                                Delete Category
                             </h3>
                             <div class="mt-2">
                                 <p class="text-sm text-gray-500">
-                                    Are you sure you want to delete this product? This action cannot be undone.
+                                    Are you sure you want to delete this Category? This action cannot be undone.
                                 </p>
                             </div>
                         </div>
@@ -42,7 +48,7 @@ const deleteProduct = () => {
                     <button 
                         type="button"
                         class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm"
-                        @click="deleteProduct"
+                        @click="deleteCategory"
                     >
                         Delete
                     </button>
