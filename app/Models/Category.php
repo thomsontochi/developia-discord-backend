@@ -19,6 +19,8 @@ class Category extends Model
         'image_path'
     ];
 
+    protected $dates = ['deleted_at'];
+
     public function products()
     {
         return $this->hasMany(Product::class);

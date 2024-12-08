@@ -118,42 +118,5 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-// Vendor Auth Routes
-    Route::post('/register', [VendorAuthController::class, 'register'])
-    ->middleware('guest')
-    ->name('vendor.register');
-    Route::post('/login', [VendorAuthController::class, 'login'])
-    ->middleware('guest')
-    ->name('vendor.login');
-   
-
-// Vendor Routes
-Route::prefix('vendor')->middleware(['auth:vendor'])->group(function () {
-
-    Route::post('/logout', [VendorAuthController::class, 'logout'])->middleware('auth:vendor')
-    ->name('vendor.logout');
-
-    Route::get('/profile', [VendorController::class, 'profile'])->name('vendor.profile');
-    Route::put('/profile', [VendorController::class, 'updateProfile'])->name('vendor.profile.update');
-    
-    // Store Management
-    Route::get('/store', [VendorController::class, 'getStore'])->name('vendor.store');
-    Route::put('/store', [VendorController::class, 'updateStore'])->name('vendor.store.update');
-    
-    // Orders
-    Route::get('/orders', [VendorController::class, 'orders'])->name('vendor.orders');
-    Route::put('/orders/{order}/status', [VendorController::class, 'updateOrderStatus'])->name('vendor.orders.status');
-    
-    // Analytics
-    Route::get('/analytics', [VendorController::class, 'analytics'])->name('vendor.analytics');
-    Route::get('/revenue', [VendorController::class, 'revenue'])->name('vendor.revenue');
-});
-
-// Admin Vendor Management Routes
-Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
-    Route::get('/vendors', [VendorController::class, 'index'])->name('admin.vendors');
-    Route::get('/vendors/{vendor}', [VendorController::class, 'show'])->name('admin.vendors.show');
-    Route::put('/vendors/{vendor}/status', [VendorController::class, 'updateStatus'])->name('admin.vendors.status');
-});
 
 require __DIR__.'/auth.php';

@@ -6,14 +6,15 @@ use Inertia\Inertia;
 use App\Models\Category;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Storage;
 
 class CategoryController extends Controller
 {
     public function index()
     {
-        $categories = Category::orderBy('created_at', 'desc')->paginate(9);
+        $categories = Category::orderBy('created_at', 'desc')->paginate(10);
        
         return Inertia::render('Categories/Index', ['categories' => $categories]);
     }
@@ -138,23 +139,28 @@ class CategoryController extends Controller
             throw $e;
         }
     }
+      
     public function destroy($category)
-    {
-        // find the category
-        $category = Category::find($category);
-       
+{
+    try {
+        $category = Category::withTrashed()->findOrFail($category);
+        
         // Delete associated image if exists
         if ($category->image_path) {
             Storage::disk('public')->delete(str_replace('/storage/', '', $category->image_path));
         }
 
-        // Soft delete the category
-        $category->delete();
+        $category->delete(); // Soft delete the category
+        // $category->forceDelete(); // Hard delete the category
 
-            return redirect()->route('categories.index')
-                ->with('message', 'Category deleted successfully');
-        
+        return redirect()->route('categories.index')
+            ->with('message', 'Category deleted successfully');
+            
+    } catch (\Exception $e) {
+        return redirect()->route('categories.index')
+            ->with('error', 'Error deleting category: ' . $e->getMessage());
     }
+}
 
 
 
