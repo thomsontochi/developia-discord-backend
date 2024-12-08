@@ -30,6 +30,9 @@ Route::get('/dashboard', function () {
             'pending' => 5,
             'newThisMonth' => 12,
         ],
+        'categories' => [
+            'total' => Category::count(),
+        ],
         'customers' => [
             'total' => 1234,
             'active' => 1100,
@@ -87,9 +90,10 @@ Route::get('/dashboard', function () {
             ],
         ],
     ];
-    
+   
     return Inertia::render('Dashboard', [
-        'stats' => $stats
+        'stats' => $stats,
+        
     ]);
 })->middleware(['auth', 'verified'])->name('dashboard');
 
