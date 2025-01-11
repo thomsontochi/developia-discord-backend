@@ -5,11 +5,13 @@ use App\Models\Product;
 use App\Models\Category;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Foundation\Application;
+use App\Http\Controllers\OrderController;
 use App\Http\Controllers\VendorController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\Auth\VendorAuthController;
+use App\Http\Controllers\Auth\EmailVerificationController;
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -97,6 +99,7 @@ Route::get('/dashboard', function () {
     ]);
 })->middleware(['auth', 'verified'])->name('dashboard');
 
+
 Route::middleware('auth')->group(function () {
     // Products Routes...
     Route::get('/products', [ProductController::class, 'index'])->name('products.index');
@@ -116,11 +119,32 @@ Route::middleware('auth')->group(function () {
     Route::put('/categories/{category}', [CategoryController::class, 'update'])->name('categories.update');
     Route::delete('/{category}', [CategoryController::class, 'destroy'])->name('categories.destroy');
 
+    // // Order Management Routes...
+    Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
+    Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
+    Route::get('/orders/export', [OrderController::class, 'export'])->name('orders.export');
+    Route::get('/disputes', [OrderController::class, 'disputes'])->name('orders.disputes');
+    Route::put('/orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.update.status');
+    Route::post('/{order}/resolve-dispute', [OrderController::class, 'resolveDispute'])->name('orders.resolve.dispute');
+
     // Profile Routes...
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
+
+// Route::middleware(['auth:vendor'])->group(function () {
+//     Route::get('/email/verify', [EmailVerificationController::class, 'notice'])
+//         ->name('verification.notice');
+
+//     Route::get('/email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])
+//         ->middleware(['signed'])
+//         ->name('verification.verify');
+
+//     Route::post('/email/verification-notification', [EmailVerificationController::class, 'send'])
+//         ->middleware(['throttle:6,1'])
+//         ->name('verification.send');
+// });
 
 
 require __DIR__.'/auth.php';

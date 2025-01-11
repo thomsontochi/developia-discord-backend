@@ -3,8 +3,12 @@
 namespace Database\Seeders;
 
 use App\Models\User;
+use App\Models\Dispute;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Database\Seeders\OrderSeeder;
+use Database\Seeders\VendorSeeder;
+use Database\Seeders\DisputeSeeder;
 use Database\Seeders\ProductSeeder;
 use Database\Seeders\CategorySeeder;
 
@@ -25,6 +29,9 @@ class DatabaseSeeder extends Seeder
 
         $this->call([
             ProductSeeder::class,
+            OrderSeeder::class,
+            DisputeSeeder::class,
+            VendorSeeder::class,
         ]);
     }
 }
