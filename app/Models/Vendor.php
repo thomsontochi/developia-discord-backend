@@ -4,20 +4,24 @@ namespace App\Models;
 
 use App\Models\Product;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Notifications\Notifiable;
 use Illuminate\Container\Attributes\Auth;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Auth\MustVerifyEmail as MustVerifyEmailTrait;
 
 class Vendor extends Authenticatable implements MustVerifyEmail
 {
-    use HasFactory;
+    use HasFactory , MustVerifyEmailTrait , Notifiable;
 
     protected $fillable = [
         'full_name',
         'email',
         'phone',
+
+        'password',
         'store_name',
         'store_description',
         'business_category',
@@ -25,6 +29,12 @@ class Vendor extends Authenticatable implements MustVerifyEmail
         'business_hours',
         'payment_details',
         'store_logo',
+        'status',
+        'verification_documents',
+        'approved_at',
+        'rejection_reason',
+        'has_completed_onboarding',
+        'onboarding_step'
     ];
 
     protected $casts = [
@@ -33,6 +43,10 @@ class Vendor extends Authenticatable implements MustVerifyEmail
         'is_verified' => 'boolean',
         'is_approved' => 'boolean',
         'email_verified_at' => 'datetime',
+        'verification_documents' => 'array',
+        'onboarding_step' => 'array',
+        'approved_at' => 'datetime',
+        'has_completed_onboarding' => 'boolean'
     ];
 
     // Relationships
@@ -67,5 +81,47 @@ class Vendor extends Authenticatable implements MustVerifyEmail
             'business_hours' => $this->business_hours,
             'address' => $this->address,
         ];
+    }
+
+    // Helper methods for status checks
+    public function isPending()
+    {
+        return $this->status === 'pending';
+    }
+
+    public function isApproved()
+    {
+        return $this->status === 'approved';
+    }
+
+    public function isRejected()
+    {
+        return $this->status === 'rejected';
+    }
+
+    // Helper for onboarding progress
+    public function getCurrentOnboardingStep()
+    {
+        return $this->onboarding_step['current_step'] ?? 1;
+    }
+
+    public function hasCompletedStep($step)
+    {
+        return in_array($step, $this->onboarding_step['completed_steps'] ?? []);
+    }
+    
+    public function updateOnboardingStep($step)
+    {
+        $currentSteps = $this->onboarding_step['completed_steps'] ?? [];
+        if (!in_array($step, $currentSteps)) {
+            $currentSteps[] = $step;
+        }
+
+        $this->update([
+            'onboarding_step' => [
+                'current_step' => $step + 1,
+                'completed_steps' => $currentSteps
+            ]
+        ]);
     }
 }

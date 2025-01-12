@@ -99,6 +99,10 @@ Route::get('/dashboard', function () {
     ]);
 })->middleware(['auth', 'verified'])->name('dashboard');
 
+// Vendor email verification routes
+Route::get('/vendor/email-verified', function() {
+    return view('vendor.verified');
+})->name('vendor.verification.success');
 
 Route::middleware('auth')->group(function () {
     // Products Routes...
@@ -145,6 +149,28 @@ Route::middleware('auth')->group(function () {
 //         ->middleware(['throttle:6,1'])
 //         ->name('verification.send');
 // });
+
+
+// todo on vendor side , after regiseration , and you get mail , the mail should lead to the frontend page to verify the email then work on the rest onn this side admin bellow 
+// What's left: for vendor
+
+// Admin Approval Functionality
+
+// Create AdminController
+
+// Add approval/rejection endpoints
+
+// Add email notifications for approval/rejection
+
+// Vendor Dashboard Endpoints
+
+// Profile management
+
+// Store statistics
+
+// Order management
+
+// Revenue reports
 
 
 require __DIR__.'/auth.php';

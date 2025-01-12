@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\Vendor;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -18,6 +19,7 @@ class VendorFactory extends Factory
             'full_name' => $this->faker->name(),
             'email' => $this->faker->unique()->safeEmail(),
             'phone' => $this->faker->phoneNumber(),
+            'password' => Hash::make('password'),
             'store_name' => $this->faker->company(),
             'store_description' => $this->faker->paragraph(),
             'business_category' => $this->faker->randomElement(['Electronics', 'Fashion', 'Food', 'Home & Garden', 'Health & Beauty']),

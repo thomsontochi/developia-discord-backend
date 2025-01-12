@@ -88,7 +88,7 @@ const getStatusClass = (status) => {
                             Orders Management
                         </h1>
                         <p class="text-gray-500">
-                            Track and manage your orders efficiently
+                            Track and manage All orders efficiently
                         </p>
                     </div>
 

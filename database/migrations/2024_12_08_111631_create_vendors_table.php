@@ -15,11 +15,12 @@ return new class extends Migration
             $table->id();
             $table->string('full_name');
             $table->string('email')->unique();
+            $table->string('password'); 
             $table->string('phone')->nullable();
-            $table->string('store_name');
+            $table->string('store_name')->nullable();
             $table->text('store_description')->nullable();
-            $table->string('business_category');
-            $table->string('address');
+            $table->string('business_category')->nullable();
+            $table->string('address')->nullable();
             $table->json('business_hours')->nullable();
             $table->json('payment_details')->nullable();
             $table->string('store_logo')->nullable();
