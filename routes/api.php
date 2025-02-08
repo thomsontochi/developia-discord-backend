@@ -4,12 +4,16 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\VendorController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Auth\VendorAuthController;
+use App\Http\Controllers\Auth\RegisteredUserController;
+use App\Http\Controllers\Auth\AuthenticatedSessionController;
 
 Route::prefix('v1')->group(function () {
-    // Existing Product Routes
-    Route::get('products', [ProductController::class, 'index'])->name('products.api.index');
-    Route::get('products/{slug}', [ProductController::class, 'show'])->name('products.api.show');
-    Route::get('categories/{slug}/products', [ProductController::class, 'byCategory'])->name('products.api.byCategory');
+
+    // Auth Routes for Customers/Admin
+    
+    // Customer/Admin Auth Routes
+    Route::post('login', [AuthenticatedSessionController::class, 'apiLogin']);
+    Route::post('register', [RegisteredUserController::class, 'apiRegister']);
 
     // Vendor Auth Routes
     Route::post('vendor/register', [VendorAuthController::class, 'register'])->name('api.vendor.register');
@@ -25,6 +29,12 @@ Route::prefix('v1')->group(function () {
             ->middleware(['throttle:6,1'])
             ->name('vendor.verification.send');
     });
+
+    // Existing Product Routes
+    Route::get('products', [ProductController::class, 'index'])->name('products.api.index');
+    Route::get('products/{slug}', [ProductController::class, 'show'])->name('products.api.show');
+    Route::get('categories/{slug}/products', [ProductController::class, 'byCategory'])->name('products.api.byCategory');
+
 
     // Protected Vendor Routes
     Route::middleware('auth:vendor')->prefix('vendor')->group(function () {
@@ -56,5 +66,10 @@ Route::prefix('v1')->group(function () {
         Route::get('vendors', [VendorController::class, 'index'])->name('api.admin.vendors');
         Route::get('vendors/{vendor}', [VendorController::class, 'show'])->name('api.admin.vendors.show');
         Route::put('vendors/{vendor}/status', [VendorController::class, 'updateStatus'])->name('api.admin.vendors.status');
+    });
+
+    
+    Route::middleware(['auth:sanctum', 'customer'])->prefix('customer')->group(function () {
+        // Customer specific routes here
     });
 });

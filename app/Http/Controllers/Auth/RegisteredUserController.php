@@ -48,4 +48,30 @@ class RegisteredUserController extends Controller
 
         return redirect(route('dashboard', absolute: false));
     }
+
+     // Add API methods
+     public function apiRegister(Request $request)
+     {
+         $request->validate([
+             'name' => 'required|string|max:255',
+             'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
+             'password' => ['required', 'confirmed', Rules\Password::defaults()],
+         ]);
+ 
+         $user = User::create([
+             'name' => $request->name,
+             'email' => $request->email,
+             'password' => Hash::make($request->password),
+             'role' => 'customer' // Default role for registration
+         ]);
+ 
+         event(new Registered($user));
+         
+         $token = $user->createToken('auth-token')->plainTextToken;
+ 
+         return response()->json([
+             'user' => $user,
+             'token' => $token
+         ], 201);
+     }
 }
