@@ -58,6 +58,29 @@ class AuthenticatedSessionController extends Controller
     }
 
     // Add API methods
+    // public function apiLogin(Request $request)
+    // {
+    //     $credentials = $request->validate([
+    //         'email' => 'required|email',
+    //         'password' => 'required'
+    //     ]);
+
+    //     if (Auth::attempt($credentials)) {
+    //         $user = Auth::user();
+    //         $token = $user->createToken('auth-token')->plainTextToken;
+
+    //         return response()->json([
+    //             'user' => $user,
+    //             'token' => $token,
+    //             'role' => $user->role
+    //         ]);
+    //     }
+
+    //     return response()->json([
+    //         'message' => 'Invalid credentials'
+    //     ], 401);
+    // }
+
     public function apiLogin(Request $request)
     {
         $credentials = $request->validate([
@@ -65,20 +88,28 @@ class AuthenticatedSessionController extends Controller
             'password' => 'required'
         ]);
 
-        if (Auth::attempt($credentials)) {
-            $user = Auth::user();
-            $token = $user->createToken('auth-token')->plainTextToken;
-            
-            return response()->json([
-                'user' => $user,
-                'token' => $token,
-                'role' => $user->role
-            ]);
-        }
+        try {
+            if (Auth::attempt($credentials)) {
+                $user = Auth::user();
+                $token = $user->createToken('auth-token')->plainTextToken;
 
-        return response()->json([
-            'message' => 'Invalid credentials'
-        ], 401);
+                return response()->json([
+                    'user' => $user,
+                    'token' => $token,
+                    'role' => $user->role,
+                    'message' => 'Login successful'
+                ]);
+            }
+
+            return response()->json([
+                'message' => 'These credentials do not match our records.'
+            ], 401);
+        } catch (\Exception $e) {
+            \Log::error('Login error: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'An error occurred during login'
+            ], 500);
+        }
     }
 
     public function apiLogout(Request $request)
@@ -86,5 +117,4 @@ class AuthenticatedSessionController extends Controller
         $request->user()->currentAccessToken()->delete();
         return response()->json(['message' => 'Logged out successfully']);
     }
-
 }
