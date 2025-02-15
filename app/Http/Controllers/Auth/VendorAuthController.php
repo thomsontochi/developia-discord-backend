@@ -130,25 +130,70 @@ class VendorAuthController extends Controller
         }
     }
 
+    // public function login(Request $request)
+    // {
+    //     $credentials = $request->validate([
+    //         'email' => 'required|email',
+    //         'password' => 'required|string',
+    //     ]);
+
+    //     if (Auth::guard('vendor')->attempt($credentials)) {
+    //         $request->session()->regenerate();
+
+    //         return response()->json([
+    //             'message' => 'Logged in successfully',
+    //             'vendor' => Auth::guard('vendor')->user()
+    //         ]);
+    //     }
+
+    //     return response()->json([
+    //         'message' => 'The provided credentials do not match our records.'
+    //     ], 401);
+    // }
+
     public function login(Request $request)
     {
-        $credentials = $request->validate([
-            'email' => 'required|email',
+        $request->validate([
             'password' => 'required|string',
         ]);
 
-        if (Auth::guard('vendor')->attempt($credentials)) {
-            $request->session()->regenerate();
-
-            return response()->json([
-                'message' => 'Logged in successfully',
-                'vendor' => Auth::guard('vendor')->user()
+        // Check if login is via email or store ID
+        if ($request->has('email')) {
+            $credentials = $request->validate([
+                'email' => 'required|email',
             ]);
+            $field = 'email';
+        } else {
+            $credentials = $request->validate([
+                'storeId' => 'required|string',
+            ]);
+            $field = 'store_id'; // Assuming this is your database column name
         }
 
-        return response()->json([
-            'message' => 'The provided credentials do not match our records.'
-        ], 401);
+        try {
+            if (Auth::guard('vendor')->attempt([
+                $field => $credentials[$field === 'email' ? 'email' : 'storeId'],
+                'password' => $request->password
+            ])) {
+                $vendor = Auth::guard('vendor')->user();
+                $token = $vendor->createToken('vendor-token')->plainTextToken;
+
+                return response()->json([
+                    'user' => $vendor,
+                    'token' => $token,
+                    'message' => 'Login successful'
+                ]);
+            }
+
+            return response()->json([
+                'message' => 'Invalid credentials'
+            ], 401);
+        } catch (\Exception $e) {
+            \Log::error('Vendor login error: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'An error occurred during login'
+            ], 500);
+        }
     }
 
     /**
@@ -302,5 +347,38 @@ class VendorAuthController extends Controller
         $request->session()->regenerateToken();
 
         return response()->json(['message' => 'Logged out successfully']);
+    }
+
+
+    // public function checkVerificationStatus(Request $request)
+    // {
+    //     $vendor = $request->user('vendor');
+        
+    //     return response()->json([
+    //         'is_verified' => $vendor->hasVerifiedEmail(),
+    //         'vendor' => new VendorResource($vendor),
+    //         'message' => $vendor->hasVerifiedEmail() 
+    //             ? 'Email is verified' 
+    //             : 'Email is not verified'
+    //     ]);
+    // }
+
+    public function checkVerificationStatus($email)
+    {
+        $vendor = Vendor::where('email', $email)->firstOrFail();
+        
+        return response()->json([
+            'verified' => $vendor->hasVerifiedEmail(),
+            'message' => $vendor->hasVerifiedEmail() 
+                ? 'Email is verified' 
+                : 'Email is not verified',
+            
+            'vendor' => [
+                'email' => $vendor->email,
+                'full_name' => $vendor->full_name,
+                'status' => $vendor->status,
+                'onboarding_step' => $vendor->onboarding_step
+            ]
+        ]);
     }
 }

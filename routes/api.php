@@ -9,15 +9,18 @@ use App\Http\Controllers\Auth\AuthenticatedSessionController;
 
 Route::prefix('v1')->group(function () {
 
-    // Auth Routes for Customers/Admin
     
-    // Customer/Admin Auth Routes
+    
+    // Customer Auth Routes
     Route::post('login', [AuthenticatedSessionController::class, 'apiLogin']);
     Route::post('register', [RegisteredUserController::class, 'apiRegister']);
 
     // Vendor Auth Routes
     Route::post('vendor/register', [VendorAuthController::class, 'register'])->name('api.vendor.register');
     Route::post('vendor/login', [VendorAuthController::class, 'login'])->name('api.vendor.login');
+
+    Route::get('check-verification/{email}', [VendorAuthController::class, 'checkVerificationStatus'])
+    ->name('vendor.verification.check');
 
     // Email Verification Routes
     Route::prefix('vendor/email')->middleware('auth:vendor')->group(function () {
@@ -28,6 +31,8 @@ Route::prefix('v1')->group(function () {
         Route::post('verification-notification', [VendorAuthController::class, 'resendVerification'])
             ->middleware(['throttle:6,1'])
             ->name('vendor.verification.send');
+
+       
     });
 
     // Existing Product Routes
