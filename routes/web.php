@@ -100,9 +100,9 @@ Route::get('/dashboard', function () {
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 // Vendor email verification routes
-Route::get('/vendor/email-verified', function() {
-    return view('vendor.verified');
-})->name('vendor.verification.success');
+// Route::get('/vendor/email-verified', function() {
+//     return view('vendor.verified');
+// })->name('vendor.verification.success');
 
 Route::middleware('auth')->group(function () {
     // Products Routes...

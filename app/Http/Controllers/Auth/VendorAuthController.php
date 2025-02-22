@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use App\Http\Resources\VendorResource;
 use Illuminate\Auth\Events\Registered;
+use App\Notifications\VendorVerifyEmail;
 use App\Jobs\SendVendorVerificationEmail;
 use Illuminate\Auth\Access\AuthorizationException;
 
@@ -83,14 +84,29 @@ class VendorAuthController extends Controller
                 ]
             ]);
 
+           
             // Create the job class and dispatch it
-            SendVendorVerificationEmail::dispatch($vendor)->onQueue('emails');
+            // SendVendorVerificationEmail::dispatch($vendor)->onQueue('emails');
+
+            $vendor->notify((new VendorVerifyEmail)->onQueue('emails'));
+
+            // SendVendorVerificationEmail::dispatch($vendor)
+            // ->onQueue('emails')
+            // ->delay(now()->addSeconds(2));
+
+            // make sure php artisan queue:work --queue=emails is running to send mail
 
             \DB::commit();
 
             return response()->json([
                 'message' => 'Registration successful. Please check your email for verification.',
-                'vendor' => new VendorResource($vendor)
+                'vendor' => new VendorResource($vendor),
+                'verification' => [
+                    'sent' => true,
+                    'email' => $vendor->email,
+                    'message' => 'Verification email has been sent'
+                ]
+
             ], 201);
 
         } catch (\Illuminate\Validation\ValidationException $e) {
@@ -297,34 +313,86 @@ class VendorAuthController extends Controller
         ]);
     }
 
+    
+
+    // public function verify(Request $request)
+    // {
+    //     $vendor = Vendor::find($request->route('id'));
+
+    //     if (!$vendor) {
+    //         throw new AuthorizationException('Invalid vendor');
+    //     }
+
+    //     if (!hash_equals(
+    //         (string) $request->route('hash'),
+    //         sha1($vendor->getEmailForVerification())
+    //     )) {
+    //         throw new AuthorizationException('Invalid hash');
+    //     }
+
+    //     if ($vendor->hasVerifiedEmail()) {
+    //         return redirect(config('app.frontend_url') . '/vendor/email-verified?status=already-verified');
+    //     }
+
+    //     if ($vendor->markEmailAsVerified()) {
+    //         event(new Verified($vendor));
+    //     }
+
+    //     return redirect(config('app.frontend_url') . '/vendor/email-verified?status=verified');
+    // }
+
+    // public function verify(Request $request)
+    // {
+    //     $vendor = Vendor::find($request->route('id'));
+
+    //     if (!$vendor) {
+    //         return redirect(config('app.frontend_url') . '/vendor/email-verification?status=invalid');
+    //     }
+
+    //     if (!hash_equals(
+    //         (string) $request->route('hash'),
+    //         sha1($vendor->getEmailForVerification())
+    //     )) {
+    //         return redirect(config('app.frontend_url') . '/vendor/email-verification?status=invalid-hash');
+    //     }
+
+    //     if ($vendor->hasVerifiedEmail()) {
+    //         return redirect(config('app.frontend_url') . '/vendor/email-verification?status=already-verified');
+    //     }
+
+    //     if ($vendor->markEmailAsVerified()) {
+    //         event(new Verified($vendor));
+    //     }
+
+    //     return redirect(config('app.frontend_url') . '/vendor/email-verification?status=success');
+    // }
+
     public function verify(Request $request)
-    {
-        $vendor = Vendor::find($request->route('id'));
+{
+    $vendor = Vendor::find($request->route('id'));
 
-        if (!hash_equals(
-            (string) $request->route('hash'),
-            sha1($vendor->getEmailForVerification())
-        )) {
-            throw new AuthorizationException;
-        }
-
-        if ($vendor->hasVerifiedEmail()) {
-            return redirect()->route('vendor.verification.success')
-                ->with('message', 'Email already verified');
-        }
-
-        if ($vendor->markEmailAsVerified()) {
-            event(new Verified($vendor));
-        }
-
-        // return response()->json(['message' => 'Email verified successfully']); 
-        // todo remember to show verified page in front end react 
-        return response()->json([
-            'message' => 'Email verified successfully',
-            'verified' => true,
-            'vendor' => new VendorResource($vendor)
-        ]);
+    if (!$vendor) {
+        return redirect(config('app.frontend_url') . '/vendor/email-verification?status=invalid');
     }
+
+    if (!hash_equals(
+        (string) $request->route('hash'),
+        sha1($vendor->getEmailForVerification())
+    )) {
+        return redirect(config('app.frontend_url') . '/vendor/email-verification?status=invalid-hash');
+    }
+
+    if ($vendor->hasVerifiedEmail()) {
+        return redirect(config('app.frontend_url') . '/vendor/email-verification?status=already-verified');
+    }
+
+    if ($vendor->markEmailAsVerified()) {
+        event(new Verified($vendor));
+    }
+
+    // Redirect to your actual frontend URL
+    return redirect('http://localhost:5174/vendor/email-verification?status=success');
+}
 
     public function resendVerification(Request $request)
     {

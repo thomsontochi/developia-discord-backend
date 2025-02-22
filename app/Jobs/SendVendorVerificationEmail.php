@@ -24,8 +24,8 @@ class SendVendorVerificationEmail implements ShouldQueue
 
     public function handle()
     {
-        // $this->vendor->sendEmailVerificationNotification();
         try {
+          
             event(new Registered($this->vendor));
         } catch (\Exception $e) {
             \Log::error('Failed to send verification email: ' . $e->getMessage(), [

@@ -4,13 +4,17 @@ namespace App\Models;
 
 use App\Models\Product;
 use Illuminate\Database\Eloquent\Model;
+use App\Notifications\VendorVerifyEmail;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Container\Attributes\Auth;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Notifications\VendorVerificationNotification;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Auth\MustVerifyEmail as MustVerifyEmailTrait;
+
+
 
 class Vendor extends Authenticatable implements MustVerifyEmail
 {
@@ -123,5 +127,15 @@ class Vendor extends Authenticatable implements MustVerifyEmail
                 'completed_steps' => $currentSteps
             ]
         ]);
+    }
+
+    // public function sendEmailVerificationNotification()
+    // {
+    //     $this->notify(new VendorVerificationNotification);
+    // }
+
+    public function sendEmailVerificationNotification()
+    {
+        $this->notify(new VendorVerifyEmail); 
     }
 }

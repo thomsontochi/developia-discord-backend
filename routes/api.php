@@ -22,11 +22,18 @@ Route::prefix('v1')->group(function () {
     Route::get('check-verification/{email}', [VendorAuthController::class, 'checkVerificationStatus'])
     ->name('vendor.verification.check');
 
+    // Route::get('verify/{id}/{hash}', [VendorAuthController::class, 'verify'])
+    //         ->middleware(['signed'])
+    //         ->name('vendor.verification.verify');
+
+    Route::get('/vendor/verify-email/{id}/{hash}', [VendorAuthController::class, 'verify'])
+    ->middleware(['signed'])
+    ->name('vendor.verification.verify');
+
     // Email Verification Routes
     Route::prefix('vendor/email')->middleware('auth:vendor')->group(function () {
-        Route::get('verify/{id}/{hash}', [VendorAuthController::class, 'verify'])
-            ->middleware(['signed'])
-            ->name('vendor.verification.verify');
+
+        
 
         Route::post('verification-notification', [VendorAuthController::class, 'resendVerification'])
             ->middleware(['throttle:6,1'])
