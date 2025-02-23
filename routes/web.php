@@ -1,6 +1,7 @@
 <?php
 
 use Inertia\Inertia;
+use App\Models\Vendor;
 use App\Models\Product;
 use App\Models\Category;
 use Illuminate\Support\Facades\Route;
@@ -26,11 +27,14 @@ Route::get('/dashboard', function () {
     // Placeholder stats without actual database queries
     $stats = [
         'vendors' => [
-            'total' => 150,
-            'active' => 120,
-            'inactive' => 25,
-            'pending' => 5,
-            'newThisMonth' => 12,
+            'total' => Vendor::count(),
+            'active' => Vendor::where('status', 'approved')->count(),
+            'inactive' => Vendor::where('status', 'suspended')->count(),
+            'pending' => Vendor::where('status', 'pending')->count(),
+            'newThisMonth' => Vendor::where('status', 'approved')
+                ->where('onboarding_step->current_step', '>', 1)
+                ->whereMonth('created_at', now()->month)
+                ->count(),
         ],
         'categories' => [
             'total' => Category::count(),
@@ -104,7 +108,7 @@ Route::get('/dashboard', function () {
 //     return view('vendor.verified');
 // })->name('vendor.verification.success');
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     // Products Routes...
     Route::get('/products', [ProductController::class, 'index'])->name('products.index');
     Route::get('/products/create', [ProductController::class, 'create'])->name('products.create');
@@ -130,6 +134,13 @@ Route::middleware('auth')->group(function () {
     Route::get('/disputes', [OrderController::class, 'disputes'])->name('orders.disputes');
     Route::put('/orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.update.status');
     Route::post('/{order}/resolve-dispute', [OrderController::class, 'resolveDispute'])->name('orders.resolve.dispute');
+
+    // Vendor Routes...
+    Route::get('/vendors', [VendorController::class, 'index'])->name('vendors.index');
+    Route::get('/vendor/create', [VendorController::class, 'create'])->name('vendors.create');
+    Route::get('/vendor/{vendor}', [VendorController::class, 'show'])->name('vendors.show');
+    Route::put('vendors/{vendor}/status', [VendorController::class, 'updateStatus'])
+        ->name('vendors.update-status');
 
     // Profile Routes...
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

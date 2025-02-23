@@ -9,6 +9,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Support\Facades\Log;
 
 class SendVendorVerificationEmail implements ShouldQueue
 {
@@ -28,7 +29,7 @@ class SendVendorVerificationEmail implements ShouldQueue
           
             event(new Registered($this->vendor));
         } catch (\Exception $e) {
-            \Log::error('Failed to send verification email: ' . $e->getMessage(), [
+            Log::error('Failed to send verification email: ' . $e->getMessage(), [
                 'vendor_id' => $this->vendor->id,
                 'email' => $this->vendor->email
             ]);
@@ -38,7 +39,7 @@ class SendVendorVerificationEmail implements ShouldQueue
 
     public function failed(\Exception $e)
     {
-        \Log::error('Vendor verification email job failed: ' . $e->getMessage(), [
+        Log::error('Vendor verification email job failed: ' . $e->getMessage(), [
             'vendor_id' => $this->vendor->id
         ]);
     }

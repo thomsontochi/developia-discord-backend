@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers\Auth;
 
+use Exception;
 use App\Models\Vendor;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Support\Facades\Auth;
@@ -11,7 +14,7 @@ use Illuminate\Support\Facades\Hash;
 use App\Http\Resources\VendorResource;
 use Illuminate\Auth\Events\Registered;
 use App\Notifications\VendorVerifyEmail;
-use App\Jobs\SendVendorVerificationEmail;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Auth\Access\AuthorizationException;
 
 class VendorAuthController extends Controller
@@ -21,58 +24,19 @@ class VendorAuthController extends Controller
      */
 
 
-    // public function register(Request $request)
-    // {
-    //     $validated = $request->validate([
-    //         'full_name' => 'required|string|max:255',
-    //         'email' => 'required|email|unique:vendors',
-    //         'password' => 'required|string|min:8|confirmed',
-    //     ]);
-
-    //     $vendor = Vendor::create([
-    //         'full_name' => $validated['full_name'],
-    //         'email' => $validated['email'],
-    //         'password' => Hash::make($validated['password']),
-    //         'status' => 'pending',
-    //         'onboarding_step' => [
-    //             'current_step' => 1,
-    //             'completed_steps' => []
-    //         ]
-    //     ]);
-
-
-
-    //     event(new Registered($vendor));
-
-    //     // Don't automatically log in - wait for email verification
-    //     return response()->json([
-    //         'message' => 'Registration successful. Please check your email for verification.',
-    //         'vendor' => new VendorResource($vendor)
-    //     ], 201);
-    // }
-
-    // php artisan queue:work --queue=emails should be run to process the job
     public function register(Request $request)
     {
         try {
-            // Check for existing vendor before validation
-            if (Vendor::where('email', $request->email)->exists()) {
-                return response()->json([
-                    'message' => 'Email already taken',
-                    'errors' => [
-                        'email' => ['This email is already registered as a vendor.']
-                    ]
-                ], 422);
-            }
+            DB::beginTransaction();
 
+            // Validate request
             $validated = $request->validate([
                 'full_name' => 'required|string|max:255',
                 'email' => 'required|email|unique:vendors',
                 'password' => 'required|string|min:8|confirmed',
             ]);
 
-            \DB::beginTransaction();
-
+            // Create vendor
             $vendor = Vendor::create([
                 'full_name' => $validated['full_name'],
                 'email' => $validated['email'],
@@ -84,88 +48,45 @@ class VendorAuthController extends Controller
                 ]
             ]);
 
-           
-            // Create the job class and dispatch it
-            // SendVendorVerificationEmail::dispatch($vendor)->onQueue('emails');
+            // Generate token - this is the Laravel Sanctum way
+            $token = $vendor->createToken('vendor-token')->plainTextToken;
 
+            // Send verification email
             $vendor->notify((new VendorVerifyEmail)->onQueue('emails'));
 
-            // SendVendorVerificationEmail::dispatch($vendor)
-            // ->onQueue('emails')
-            // ->delay(now()->addSeconds(2));
+            DB::commit();
 
-            // make sure php artisan queue:work --queue=emails is running to send mail
-
-            \DB::commit();
-
+            // Return response with token
             return response()->json([
                 'message' => 'Registration successful. Please check your email for verification.',
                 'vendor' => new VendorResource($vendor),
+                'token' => $token, // Include token in response
                 'verification' => [
                     'sent' => true,
                     'email' => $vendor->email,
-                    'message' => 'Verification email has been sent'
                 ]
-
             ], 201);
-
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
+            DB::rollBack();
             return response()->json([
                 'message' => 'Validation failed',
                 'errors' => $e->errors()
             ], 422);
-        } catch (\Illuminate\Database\QueryException $e) {
-            \DB::rollBack();
-            \Log::error('Database error during vendor registration: ' . $e->getMessage());
-            
-            // Check for duplicate entry error
-            if (str_contains($e->getMessage(), 'Duplicate entry')) {
-                return response()->json([
-                    'message' => 'Email already taken',
-                    'errors' => [
-                        'email' => ['This email is already registered.']
-                    ]
-                ], 422);
-            }
+        } catch (Exception $e) {
+            DB::rollBack();
+            Log::error('Vendor registration failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
 
             return response()->json([
-                'message' => 'Database error occurred. Please try again later.'
-            ], 500);
-        } catch (\Exception $e) {
-            \DB::rollBack();
-            \Log::error('Vendor registration failed: ' . $e->getMessage());
-            
-            // Return more detailed error in development
-            $errorMessage = config('app.debug') ? 
-                'Error: ' . $e->getMessage() : 
-                'Registration failed. Please try again later.';
-                
-            return response()->json([
-                'message' => $errorMessage
+                'message' => config('app.debug')
+                    ? $e->getMessage()
+                    : 'Registration failed. Please try again later.'
             ], 500);
         }
     }
 
-    // public function login(Request $request)
-    // {
-    //     $credentials = $request->validate([
-    //         'email' => 'required|email',
-    //         'password' => 'required|string',
-    //     ]);
-
-    //     if (Auth::guard('vendor')->attempt($credentials)) {
-    //         $request->session()->regenerate();
-
-    //         return response()->json([
-    //             'message' => 'Logged in successfully',
-    //             'vendor' => Auth::guard('vendor')->user()
-    //         ]);
-    //     }
-
-    //     return response()->json([
-    //         'message' => 'The provided credentials do not match our records.'
-    //     ], 401);
-    // }
 
     public function login(Request $request)
     {
@@ -215,9 +136,20 @@ class VendorAuthController extends Controller
     /**
      * Step 2: Store Setup
      */
+    
+
     public function setupStore(Request $request)
     {
-        $vendor = auth('vendor')->user();
+        // Change this line
+        // $vendor = auth('vendor')->user();
+        // To this
+        $vendor = $request->user();
+
+        if (!$vendor) {
+            return response()->json([
+                'message' => 'Unauthenticated'
+            ], 401);
+        }
 
         if (!$vendor->hasVerifiedEmail()) {
             return response()->json([
@@ -249,30 +181,60 @@ class VendorAuthController extends Controller
         ]);
     }
 
+    // public function setupPayment(Request $request)
+    // {
+    //     $vendor = auth('vendor')->user();
+
+    //     // Check previous step completion
+    //     if (!$vendor->hasCompletedStep(2)) {
+    //         return response()->json([
+    //             'message' => 'Please complete store setup first'
+    //         ], 403);
+    //     }
+
+    //     $validated = $request->validate([
+    //         'payment_details.bank_name' => 'required|string',
+    //         'payment_details.account_number' => 'required|string',
+    //         'payment_details.account_name' => 'required|string',
+    //     ]);
+
+    //     $vendor->update([
+    //         'payment_details' => $validated['payment_details']
+    //     ]);
+
+    //     $vendor->updateOnboardingStep(3);
+
+    //     // Mark onboarding as completed after payment setup
+    //     $vendor->update(['has_completed_onboarding' => true]);
+
+    //     return response()->json([
+    //         'message' => 'Payment setup completed',
+    //         'vendor' => new VendorResource($vendor)
+    //     ]);
+    // }
     public function setupPayment(Request $request)
     {
-        $vendor = auth('vendor')->user();
+        $vendor = $request->user();
 
-        // Check previous step completion
-        if (!$vendor->hasCompletedStep(2)) {
+        if (!$vendor) {
             return response()->json([
-                'message' => 'Please complete store setup first'
-            ], 403);
+                'message' => 'Unauthenticated'
+            ], 401);
         }
 
+        // Simplified validation matching our schema
         $validated = $request->validate([
-            'payment_details.bank_name' => 'required|string',
-            'payment_details.account_number' => 'required|string',
-            'payment_details.account_name' => 'required|string',
+            'bank_name' => 'required|string',
+            'account_number' => 'required|string',
+            'account_name' => 'required|string',
         ]);
 
+        // Store payment details as JSON
         $vendor->update([
-            'payment_details' => $validated['payment_details']
+            'payment_details' => $validated
         ]);
 
         $vendor->updateOnboardingStep(3);
-
-        // Mark onboarding as completed after payment setup
         $vendor->update(['has_completed_onboarding' => true]);
 
         return response()->json([
@@ -283,7 +245,13 @@ class VendorAuthController extends Controller
 
     public function uploadDocuments(Request $request)
     {
-        $vendor = auth('vendor')->user();
+        // $vendor = auth('vendor')->user();
+        $vendor = $request->user();
+        if (!$vendor) {
+            return response()->json([
+                'message' => 'Unauthenticated'
+            ], 401);
+        }
 
         $validated = $request->validate([
             'business_license' => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
@@ -313,86 +281,33 @@ class VendorAuthController extends Controller
         ]);
     }
 
-    
-
-    // public function verify(Request $request)
-    // {
-    //     $vendor = Vendor::find($request->route('id'));
-
-    //     if (!$vendor) {
-    //         throw new AuthorizationException('Invalid vendor');
-    //     }
-
-    //     if (!hash_equals(
-    //         (string) $request->route('hash'),
-    //         sha1($vendor->getEmailForVerification())
-    //     )) {
-    //         throw new AuthorizationException('Invalid hash');
-    //     }
-
-    //     if ($vendor->hasVerifiedEmail()) {
-    //         return redirect(config('app.frontend_url') . '/vendor/email-verified?status=already-verified');
-    //     }
-
-    //     if ($vendor->markEmailAsVerified()) {
-    //         event(new Verified($vendor));
-    //     }
-
-    //     return redirect(config('app.frontend_url') . '/vendor/email-verified?status=verified');
-    // }
-
-    // public function verify(Request $request)
-    // {
-    //     $vendor = Vendor::find($request->route('id'));
-
-    //     if (!$vendor) {
-    //         return redirect(config('app.frontend_url') . '/vendor/email-verification?status=invalid');
-    //     }
-
-    //     if (!hash_equals(
-    //         (string) $request->route('hash'),
-    //         sha1($vendor->getEmailForVerification())
-    //     )) {
-    //         return redirect(config('app.frontend_url') . '/vendor/email-verification?status=invalid-hash');
-    //     }
-
-    //     if ($vendor->hasVerifiedEmail()) {
-    //         return redirect(config('app.frontend_url') . '/vendor/email-verification?status=already-verified');
-    //     }
-
-    //     if ($vendor->markEmailAsVerified()) {
-    //         event(new Verified($vendor));
-    //     }
-
-    //     return redirect(config('app.frontend_url') . '/vendor/email-verification?status=success');
-    // }
 
     public function verify(Request $request)
-{
-    $vendor = Vendor::find($request->route('id'));
+    {
+        $vendor = Vendor::find($request->route('id'));
 
-    if (!$vendor) {
-        return redirect(config('app.frontend_url') . '/vendor/email-verification?status=invalid');
+        if (!$vendor) {
+            return redirect(config('app.frontend_url') . '/vendor/email-verification?status=invalid');
+        }
+
+        if (!hash_equals(
+            (string) $request->route('hash'),
+            sha1($vendor->getEmailForVerification())
+        )) {
+            return redirect(config('app.frontend_url') . '/vendor/email-verification?status=invalid-hash');
+        }
+
+        if ($vendor->hasVerifiedEmail()) {
+            return redirect(config('app.frontend_url') . '/vendor/email-verification?status=already-verified');
+        }
+
+        if ($vendor->markEmailAsVerified()) {
+            event(new Verified($vendor));
+        }
+
+        // Redirect to your actual frontend URL
+        return redirect('http://localhost:5174/vendor/email-verification?status=success');
     }
-
-    if (!hash_equals(
-        (string) $request->route('hash'),
-        sha1($vendor->getEmailForVerification())
-    )) {
-        return redirect(config('app.frontend_url') . '/vendor/email-verification?status=invalid-hash');
-    }
-
-    if ($vendor->hasVerifiedEmail()) {
-        return redirect(config('app.frontend_url') . '/vendor/email-verification?status=already-verified');
-    }
-
-    if ($vendor->markEmailAsVerified()) {
-        event(new Verified($vendor));
-    }
-
-    // Redirect to your actual frontend URL
-    return redirect('http://localhost:5174/vendor/email-verification?status=success');
-}
 
     public function resendVerification(Request $request)
     {
@@ -418,29 +333,17 @@ class VendorAuthController extends Controller
     }
 
 
-    // public function checkVerificationStatus(Request $request)
-    // {
-    //     $vendor = $request->user('vendor');
-        
-    //     return response()->json([
-    //         'is_verified' => $vendor->hasVerifiedEmail(),
-    //         'vendor' => new VendorResource($vendor),
-    //         'message' => $vendor->hasVerifiedEmail() 
-    //             ? 'Email is verified' 
-    //             : 'Email is not verified'
-    //     ]);
-    // }
 
     public function checkVerificationStatus($email)
     {
         $vendor = Vendor::where('email', $email)->firstOrFail();
-        
+
         return response()->json([
             'verified' => $vendor->hasVerifiedEmail(),
-            'message' => $vendor->hasVerifiedEmail() 
-                ? 'Email is verified' 
+            'message' => $vendor->hasVerifiedEmail()
+                ? 'Email is verified'
                 : 'Email is not verified',
-            
+
             'vendor' => [
                 'email' => $vendor->email,
                 'full_name' => $vendor->full_name,
@@ -449,4 +352,5 @@ class VendorAuthController extends Controller
             ]
         ]);
     }
+
 }

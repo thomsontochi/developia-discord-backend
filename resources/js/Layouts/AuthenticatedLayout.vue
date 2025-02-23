@@ -38,24 +38,31 @@ const showingNavigationDropdown = ref(false);
                                     Dashboard
                                 </NavLink>
                                 <NavLink
-                                    :href="route('products.index')"
+                                    :href="route('admin.products.index')"
                                     :active="route().current('products.*')"
                                 >
                                     Products
                                 </NavLink>
                                 <!-- add category Navigation Links -->
                                 <NavLink
-                                    :href="route('categories.index')"
+                                    :href="route('admin.categories.index')"
                                     :active="route().current('categories.*')"
                                 >
                                     Categories
                                 </NavLink>
                                 <!-- add order Navigation Links -->
                                 <NavLink
-                                    :href="route('orders.index')"
+                                    :href="route('admin.orders.index')"
                                     :active="route().current('orders.*')"
                                 >
                                     Orders
+                                </NavLink>
+                            <!-- nav bar for vendors     -->
+                                <NavLink
+                                    :href="route('admin.vendors.index')"
+                                    :active="route().current('vendors.*')"
+                                >
+                                    Vendors
                                 </NavLink>
                             </div>
                         </div>
@@ -90,7 +97,7 @@ const showingNavigationDropdown = ref(false);
 
                                     <template #content>
                                         <DropdownLink
-                                            :href="route('profile.edit')"
+                                            :href="route('admin.profile.edit')"
                                         >
                                             Profile
                                         </DropdownLink>
@@ -165,13 +172,13 @@ const showingNavigationDropdown = ref(false);
                             Dashboard
                         </ResponsiveNavLink>
                         <ResponsiveNavLink
-                            :href="route('products.index')"
+                            :href="route('admin.products.index')"
                             :active="route().current('products.*')"
                         >
                             Products
                         </ResponsiveNavLink>
                         <ResponsiveNavLink
-                            :href="route('categories.index')"
+                            :href="route('admin.categories.index')"
                             :active="route().current('categories.*')"
                         >
                             Categories
@@ -190,7 +197,7 @@ const showingNavigationDropdown = ref(false);
                         </div>
 
                         <div class="mt-3 space-y-1">
-                            <ResponsiveNavLink :href="route('profile.edit')">
+                            <ResponsiveNavLink :href="route('admin.profile.edit')">
                                 Profile
                             </ResponsiveNavLink>
                             <ResponsiveNavLink

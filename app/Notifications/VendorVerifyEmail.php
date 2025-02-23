@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Notifications\Notification;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -33,7 +34,7 @@ class VendorVerifyEmail extends Notification implements ShouldQueue
     /**
      * Get the mail representation of the notification.
      */
-    
+
 
     // public function toMail($notifiable): MailMessage
     // {
@@ -66,34 +67,34 @@ class VendorVerifyEmail extends Notification implements ShouldQueue
     // }
 
     public function toMail($notifiable): MailMessage
-{
-    \Log::info('Generating verification URL');
+    {
+        Log::info('Generating verification URL');
 
-    // Get the full backend URL
-    $verificationUrl = URL::temporarySignedRoute(
-        'vendor.verification.verify',
-        now()->addMinutes(60),
-        [
-            'id' => $notifiable->getKey(),
-            'hash' => sha1($notifiable->getEmailForVerification()),
-        ]
-    );
+        // Get the full backend URL
+        $verificationUrl = URL::temporarySignedRoute(
+            'vendor.verification.verify',
+            now()->addMinutes(60),
+            [
+                'id' => $notifiable->getKey(),
+                'hash' => sha1($notifiable->getEmailForVerification()),
+            ]
+        );
 
-    // Make sure URL is absolute
-    if (!str_starts_with($verificationUrl, 'http')) {
-        $verificationUrl = config('app.url') . $verificationUrl;
+        // Make sure URL is absolute
+        if (!str_starts_with($verificationUrl, 'http')) {
+            $verificationUrl = config('app.url') . $verificationUrl;
+        }
+
+        Log::info('Verification URL generated', [
+            'url' => $verificationUrl
+        ]);
+
+        return (new MailMessage)
+            ->subject('Verify Your Vendor Email Address')
+            ->line('Please click the button below to verify your email address.')
+            ->action('Vendor Verify Email Address', $verificationUrl)
+            ->line('If you did not create a vendor account, no further action is required.');
     }
-
-    \Log::info('Verification URL generated', [
-        'url' => $verificationUrl
-    ]);
-
-    return (new MailMessage)
-        ->subject('Verify Your Vendor Email Address')
-        ->line('Please click the button below to verify your email address.')
-        ->action('Vendor Verify Email Address', $verificationUrl)
-        ->line('If you did not create a vendor account, no further action is required.');
-}
 
     /**
      * Get the array representation of the notification.

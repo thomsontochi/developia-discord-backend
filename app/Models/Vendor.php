@@ -3,6 +3,9 @@
 namespace App\Models;
 
 use App\Models\Product;
+use App\Models\VendorActivityLog;
+use Laravel\Sanctum\HasApiTokens;
+use App\Models\VendorCommunication;
 use Illuminate\Database\Eloquent\Model;
 use App\Notifications\VendorVerifyEmail;
 use Illuminate\Notifications\Notifiable;
@@ -18,7 +21,7 @@ use Illuminate\Auth\MustVerifyEmail as MustVerifyEmailTrait;
 
 class Vendor extends Authenticatable implements MustVerifyEmail
 {
-    use HasFactory , MustVerifyEmailTrait , Notifiable;
+    use HasFactory, MustVerifyEmailTrait, Notifiable, HasApiTokens;
 
     protected $fillable = [
         'full_name',
@@ -113,7 +116,7 @@ class Vendor extends Authenticatable implements MustVerifyEmail
     {
         return in_array($step, $this->onboarding_step['completed_steps'] ?? []);
     }
-    
+
     public function updateOnboardingStep($step)
     {
         $currentSteps = $this->onboarding_step['completed_steps'] ?? [];
@@ -136,6 +139,43 @@ class Vendor extends Authenticatable implements MustVerifyEmail
 
     public function sendEmailVerificationNotification()
     {
-        $this->notify(new VendorVerifyEmail); 
+        $this->notify(new VendorVerifyEmail);
+    }
+
+
+   
+
+    public function activityLogs(): HasMany
+    {
+        return $this->hasMany(VendorActivityLog::class);
+    }
+
+    public function communications(): HasMany
+    {
+        return $this->hasMany(VendorCommunication::class);
+    }
+
+    // Helper methods for logging activities
+    public function logActivity(string $action, array $details = [])
+    {
+        return $this->activityLogs()->create([
+            'action' => $action,
+            'details' => $details
+        ]);
+    }
+
+    // Helper methods for communications
+    public function sendCommunication(string $type, string $subject, string $content)
+    {
+        return $this->communications()->create([
+            'type' => $type,
+            'subject' => $subject,
+            'content' => $content
+        ]);
+    }
+
+    public function getUnreadCommunicationsCount(): int
+    {
+        return $this->communications()->whereNull('read_at')->count();
     }
 }

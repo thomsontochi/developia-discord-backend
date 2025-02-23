@@ -6,15 +6,15 @@ use App\Models\Vendor;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-/**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Vendor>
- */
 class VendorFactory extends Factory
 {
     protected $model = Vendor::class;
 
     public function definition(): array
     {
+        $status = $this->faker->randomElement(['pending', 'approved', 'suspended', 'rejected']);
+        $created_at = $this->faker->dateTimeBetween('-1 year', 'now');
+        
         return [
             'full_name' => $this->faker->name(),
             'email' => $this->faker->unique()->safeEmail(),
@@ -39,28 +39,64 @@ class VendorFactory extends Factory
                 'account_name' => $this->faker->name(),
             ],
             'store_logo' => null,
-            'is_verified' => $this->faker->boolean(70),
-            'is_approved' => $this->faker->boolean(80),
-            'email_verified_at' => $this->faker->randomElement([now(), null]),
-            'created_at' => $this->faker->dateTimeBetween('-1 year', 'now'),
-            'updated_at' => function (array $attributes) {
-                return $this->faker->dateTimeBetween($attributes['created_at'], 'now');
-            },
+            'status' => $status,
+            'commission_rate' => $this->faker->randomFloat(2, 5, 15),
+            'verification_documents' => [
+                'business_license' => 'documents/license.pdf',
+                'tax_certificate' => 'documents/tax.pdf',
+                'id_proof' => 'documents/id.pdf'
+            ],
+            'is_verified' => $status === 'approved',
+            'email_verified_at' => $status === 'approved' ? now() : null,
+            'approved_at' => $status === 'approved' ? now() : null,
+            'rejection_reason' => $status === 'rejected' ? $this->faker->sentence() : null,
+            'has_completed_onboarding' => $status === 'approved',
+            'onboarding_step' => [
+                'current_step' => $status === 'approved' ? 4 : $this->faker->numberBetween(1, 3),
+                'completed_steps' => $status === 'approved' ? [1,2,3,4] : []
+            ],
+            
+            // Performance metrics
+            'total_products' => $this->faker->numberBetween(0, 100),
+            'total_sales' => $this->faker->randomFloat(2, 0, 100000),
+            'average_rating' => $this->faker->randomFloat(1, 3.0, 5.0),
+            'total_reviews' => $this->faker->numberBetween(0, 500),
+            'fulfillment_rate' => $this->faker->randomFloat(2, 80, 100),
+            'return_rate' => $this->faker->randomFloat(2, 0, 10),
+            'current_balance' => $this->faker->randomFloat(2, 0, 10000),
+            'pending_payout' => $this->faker->randomFloat(2, 0, 5000),
+            
+            'created_at' => $created_at,
+            'updated_at' => $this->faker->dateTimeBetween($created_at, 'now'),
         ];
     }
 
-    public function unverified(): static
+    public function pending(): static
     {
         return $this->state(fn (array $attributes) => [
+            'status' => 'pending',
             'is_verified' => false,
             'email_verified_at' => null,
+            'approved_at' => null,
         ]);
     }
 
-    public function unapproved(): static
+    public function approved(): static
     {
         return $this->state(fn (array $attributes) => [
-            'is_approved' => false,
+            'status' => 'approved',
+            'is_verified' => true,
+            'email_verified_at' => now(),
+            'approved_at' => now(),
+            'has_completed_onboarding' => true,
+        ]);
+    }
+
+    public function suspended(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => 'suspended',
+            'rejection_reason' => $this->faker->sentence(),
         ]);
     }
 }

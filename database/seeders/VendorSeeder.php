@@ -3,32 +3,51 @@
 namespace Database\Seeders;
 
 use App\Models\Vendor;
+use App\Models\VendorActivityLog;
+use App\Models\VendorCommunication;
 use Illuminate\Database\Seeder;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 
 class VendorSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        // Create 20 verified and approved vendors
+        // Create approved vendors
         Vendor::factory()
-            ->count(20)
-            ->create();
+            ->count(15)
+            ->approved()
+            ->create()
+            ->each(function ($vendor) {
+                // Add activity logs
+                VendorActivityLog::factory()->count(5)->create([
+                    'vendor_id' => $vendor->id
+                ]);
 
-        // Create 5 unverified vendors
+                // Add communications
+                VendorCommunication::factory()->count(3)->create([
+                    'vendor_id' => $vendor->id
+                ]);
+            });
+
+        // Create pending vendors
+        Vendor::factory()
+            ->count(8)
+            ->pending()
+            ->create()
+            ->each(function ($vendor) {
+                VendorActivityLog::factory()->count(2)->create([
+                    'vendor_id' => $vendor->id
+                ]);
+            });
+
+        // Create suspended vendors
         Vendor::factory()
             ->count(5)
-            ->unverified()
-            ->create();
-
-        // Create 5 verified but unapproved vendors
-        Vendor::factory()
-            ->count(5)
-            ->unapproved()
-            ->create();
-
+            ->suspended()
+            ->create()
+            ->each(function ($vendor) {
+                VendorActivityLog::factory()->count(3)->create([
+                    'vendor_id' => $vendor->id
+                ]);
+            });
     }
 }

@@ -101,7 +101,7 @@ defineProps({
                     >
                         <div class="p-4 space-y-3">
                             <Link
-                                :href="route('categories.create')"
+                                :href="route('admin.categories.create')"
                                 class="w-full px-4 py-2 bg-white/20 text-white rounded-md hover:bg-white/30 transition-all flex items-center justify-center gap-2"
                             >
                                 <FolderIcon class="h-5 w-5" />
@@ -115,7 +115,7 @@ defineProps({
                 <!-- Desktop Menu -->
                 <div class="hidden sm:flex items-center">
                     <Link
-                        :href="route('categories.create')"
+                        :href="route('admin.categories.create')"
                         class="px-4 py-2 bg-white/20 text-white rounded-md hover:bg-white/30 transition-all flex items-center whitespace-nowrap"
                     >
                         <FolderIcon class="h-5 w-5 mr-2" />
@@ -494,6 +494,55 @@ defineProps({
                             </div>
                         </div>
                     </div>
+
+                    <!-- Vendors Card -->
+                    <div
+                        class="bg-white rounded-xl shadow-md hover:shadow-lg transition-all p-4 sm:p-6 border-l-4 border-purple-500 space-y-3"
+                    >
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <UsersIcon class="h-6 w-6 text-purple-500" />
+                                <h3
+                                    class="text-base sm:text-lg font-semibold text-gray-800"
+                                >
+                                    Vendors
+                                </h3>
+                            </div>
+                        </div>
+                        <span
+                            class="text-xs sm:text-sm text-green-600 bg-green-50 px-2 py-1 rounded-full"
+                        >
+                            +{{ stats.vendors.newThisMonth }} this month
+                        </span>
+                        <div class="space-y-2">
+                            <div
+                                class="flex justify-between text-xs sm:text-sm"
+                            >
+                                <span class="text-gray-600">Total</span>
+                                <span class="font-bold text-gray-800">{{
+                                    stats.vendors.total
+                                }}</span>
+                            </div>
+                            <div
+                                class="flex justify-between text-xs sm:text-sm"
+                            >
+                                <span class="text-gray-600">Active</span>
+                                <span class="text-green-600 font-bold">{{
+                                    stats.vendors.active
+                                }}</span>
+                            </div>
+                            <div
+                                class="flex justify-between text-xs sm:text-sm"
+                            >
+                                <span class="text-gray-600">Pending</span>
+                                <span class="text-yellow-600 font-bold">{{
+                                    stats.vendors.pending
+                                }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    
 
                     <!-- Quick Actions -->
                     <div class="bg-white rounded-xl shadow-md p-6">

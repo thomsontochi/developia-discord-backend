@@ -49,7 +49,7 @@ Route::prefix('v1')->group(function () {
 
 
     // Protected Vendor Routes
-    Route::middleware('auth:vendor')->prefix('vendor')->group(function () {
+   Route::middleware('auth:sanctum')->prefix('vendor')->group(function () {
 
         // Onboarding Steps
         Route::post('setup-store', [VendorAuthController::class, 'setupStore']);

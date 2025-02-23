@@ -15,7 +15,7 @@
                     inspire and fulfill your needs.
                 </p>
                 <Link
-                    :href="route('categories.create')"
+                    :href="route('admin.categories.create')"
                     class="mt-8 inline-block px-8 py-3 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition"
                 >
                     Add a New Category
