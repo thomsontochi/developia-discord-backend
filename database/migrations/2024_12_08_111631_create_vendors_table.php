@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string('store_name')->nullable();
             $table->text('store_description')->nullable();
             $table->string('business_category')->nullable();
+            
             $table->string('address')->nullable();
             $table->json('business_hours')->nullable();
             $table->json('payment_details')->nullable();

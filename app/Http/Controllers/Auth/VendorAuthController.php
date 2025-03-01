@@ -181,67 +181,72 @@ class VendorAuthController extends Controller
         ]);
     }
 
-    // public function setupPayment(Request $request)
-    // {
-    //     $vendor = auth('vendor')->user();
-
-    //     // Check previous step completion
-    //     if (!$vendor->hasCompletedStep(2)) {
-    //         return response()->json([
-    //             'message' => 'Please complete store setup first'
-    //         ], 403);
-    //     }
-
-    //     $validated = $request->validate([
-    //         'payment_details.bank_name' => 'required|string',
-    //         'payment_details.account_number' => 'required|string',
-    //         'payment_details.account_name' => 'required|string',
-    //     ]);
-
-    //     $vendor->update([
-    //         'payment_details' => $validated['payment_details']
-    //     ]);
-
-    //     $vendor->updateOnboardingStep(3);
-
-    //     // Mark onboarding as completed after payment setup
-    //     $vendor->update(['has_completed_onboarding' => true]);
-
-    //     return response()->json([
-    //         'message' => 'Payment setup completed',
-    //         'vendor' => new VendorResource($vendor)
-    //     ]);
-    // }
     public function setupPayment(Request $request)
     {
-        $vendor = $request->user();
-
-        if (!$vendor) {
+        Log::info('Payment setup request received', [
+            'data' => $request->all(),
+            'headers' => $request->headers->all()
+        ]);
+    
+        try {
+            $vendor = $request->user();
+    
+            if (!$vendor) {
+                Log::error('Unauthorized payment setup attempt');
+                return response()->json([
+                    'message' => 'Unauthenticated'
+                ], 401);
+            }
+    
+            // Validate the request
+            $validated = $request->validate([
+                'bank_name' => 'required|string',
+                'account_number' => 'required|string',
+                'account_name' => 'required|string',
+            ]);
+    
+            Log::info('Payment validation passed', [
+                'vendor_id' => $vendor->id,
+                'validated_data' => $validated
+            ]);
+    
+            // Store the payment details
+            $vendor->update([
+                'payment_details' => $validated
+            ]);
+    
+            $vendor->updateOnboardingStep(3);
+            $vendor->update(['has_completed_onboarding' => true]);
+    
+            Log::info('Payment setup completed', [
+                'vendor_id' => $vendor->id
+            ]);
+    
             return response()->json([
-                'message' => 'Unauthenticated'
-            ], 401);
+                'message' => 'Payment setup completed',
+                'vendor' => new VendorResource($vendor)
+            ]);
+    
+        } catch (ValidationException $e) {
+            Log::error('Payment setup validation failed', [
+                'errors' => $e->errors()
+            ]);
+            return response()->json([
+                'message' => 'Payment setup failed',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('Payment setup failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json([
+                'message' => 'Payment setup failed',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        // Simplified validation matching our schema
-        $validated = $request->validate([
-            'bank_name' => 'required|string',
-            'account_number' => 'required|string',
-            'account_name' => 'required|string',
-        ]);
-
-        // Store payment details as JSON
-        $vendor->update([
-            'payment_details' => $validated
-        ]);
-
-        $vendor->updateOnboardingStep(3);
-        $vendor->update(['has_completed_onboarding' => true]);
-
-        return response()->json([
-            'message' => 'Payment setup completed',
-            'vendor' => new VendorResource($vendor)
-        ]);
     }
+   
 
     public function uploadDocuments(Request $request)
     {
