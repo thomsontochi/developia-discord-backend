@@ -59,7 +59,7 @@ class CategoryController extends Controller
     
             Category::create($validated);
     
-            return redirect()->route('categories.index')
+            return redirect()->route('admin.categories.index')
                 ->with('message', 'Category created successfully');
     
         } catch (\Illuminate\Database\QueryException $e) {
@@ -129,7 +129,7 @@ class CategoryController extends Controller
             // Update the category
             $category->update($validated);
 
-            return redirect()->route('categories.index')
+            return redirect()->route('admin.categories.index')
                 ->with('message', 'Category updated successfully');
         } catch (\Illuminate\Database\QueryException $e) {
             if ($e->errorInfo[1] === 1062) { // MySQL duplicate entry error code
@@ -153,11 +153,11 @@ class CategoryController extends Controller
         $category->delete(); // Soft delete the category
         // $category->forceDelete(); // Hard delete the category
 
-        return redirect()->route('categories.index')
+        return redirect()->route('admin.categories.index')
             ->with('message', 'Category deleted successfully');
             
     } catch (\Exception $e) {
-        return redirect()->route('categories.index')
+        return redirect()->route('admin.categories.index')
             ->with('error', 'Error deleting category: ' . $e->getMessage());
     }
 }

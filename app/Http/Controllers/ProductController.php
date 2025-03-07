@@ -45,7 +45,7 @@ class ProductController extends Controller
 
         try {
             Product::create($validated);
-            return redirect()->route('products.index')
+            return redirect()->route('admin.products.index')
                 ->with('message', 'Product created successfully');
         } catch (\Exception $e) {
             return back()->withErrors([
@@ -82,7 +82,7 @@ class ProductController extends Controller
     
         try {
             $product->update($validated);
-            return redirect()->route('products.index')
+            return redirect()->route('admin.products.index')
                 ->with('message', 'Product updated successfully');
         } catch (\Exception $e) {
             return back()->withErrors([
@@ -95,7 +95,7 @@ class ProductController extends Controller
     {
         $product->delete();
 
-        return redirect()->route('products.index')
+        return redirect()->route('admin.products.index')
             ->with('message', 'Product deleted successfully');
     }
 }

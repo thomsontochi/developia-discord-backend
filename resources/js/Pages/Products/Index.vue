@@ -36,7 +36,7 @@ const openDeleteModal = (productId) => {
             <div class="flex justify-between items-center">
                 <h2 class="font-semibold text-xl text-gray-800 leading-tight">Products</h2>
                 <Link
-                    :href="route('products.create')"
+                    :href="route('admin.products.create')"
                     class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
                 >
                     Add New Product
@@ -74,7 +74,7 @@ const openDeleteModal = (productId) => {
                                     
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                         <Link 
-                                            :href="route('products.edit', { product: product.id })"
+                                            :href="route('admin.products.edit', { product: product.id })"
                                             class="text-indigo-600 hover:text-indigo-900 mr-3"
                                         >
                                             Edit

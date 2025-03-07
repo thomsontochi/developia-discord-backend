@@ -50,7 +50,7 @@
                         <div class="mt-3 flex space-x-2">
                             <Link
                                 :href="
-                                    route('categories.edit', {
+                                    route('admin.categories.edit', {
                                         category: category.id,
                                     })
                                 "
