@@ -3,8 +3,12 @@
 namespace Database\Seeders;
 
 use App\Models\User;
+use App\Models\Dispute;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Database\Seeders\OrderSeeder;
+use Database\Seeders\VendorSeeder;
+use Database\Seeders\DisputeSeeder;
 use Database\Seeders\ProductSeeder;
 use Database\Seeders\CategorySeeder;
 
@@ -18,13 +22,19 @@ class DatabaseSeeder extends Seeder
         // User::factory(10)->create();
 
         User::factory()->create([
-            'name' => 'vendlyAdmin',
+            'first_name' => 'Vendly',
+            'last_name' => 'Admin',
             'email' => 'vendlyAdmin@example.com',
+            // 'name' => 'vendlyAdmin',
+            // 'email' => 'vendlyAdmin@example.com',
             //  password = password
         ]);
 
         $this->call([
             ProductSeeder::class,
+            OrderSeeder::class,
+            DisputeSeeder::class,
+            VendorSeeder::class,
         ]);
     }
 }

@@ -1,11 +1,11 @@
 <script setup>
-import { ref } from 'vue';
-import ApplicationLogo from '@/Components/ApplicationLogo.vue';
-import Dropdown from '@/Components/Dropdown.vue';
-import DropdownLink from '@/Components/DropdownLink.vue';
-import NavLink from '@/Components/NavLink.vue';
-import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue';
-import { Link } from '@inertiajs/vue3';
+import { ref } from "vue";
+import ApplicationLogo from "@/Components/ApplicationLogo.vue";
+import Dropdown from "@/Components/Dropdown.vue";
+import DropdownLink from "@/Components/DropdownLink.vue";
+import NavLink from "@/Components/NavLink.vue";
+import ResponsiveNavLink from "@/Components/ResponsiveNavLink.vue";
+import { Link } from "@inertiajs/vue3";
 
 const showingNavigationDropdown = ref(false);
 </script>
@@ -13,9 +13,7 @@ const showingNavigationDropdown = ref(false);
 <template>
     <div>
         <div class="min-h-screen bg-gray-100">
-            <nav
-                class="border-b border-gray-100 bg-white"
-            >
+            <nav class="border-b border-gray-100 bg-white">
                 <!-- Primary Navigation Menu -->
                 <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                     <div class="flex h-16 justify-between">
@@ -40,10 +38,31 @@ const showingNavigationDropdown = ref(false);
                                     Dashboard
                                 </NavLink>
                                 <NavLink
-                                    :href="route('products.index')"
+                                    :href="route('admin.products.index')"
                                     :active="route().current('products.*')"
                                 >
                                     Products
+                                </NavLink>
+                                <!-- add category Navigation Links -->
+                                <NavLink
+                                    :href="route('admin.categories.index')"
+                                    :active="route().current('categories.*')"
+                                >
+                                    Categories
+                                </NavLink>
+                                <!-- add order Navigation Links -->
+                                <NavLink
+                                    :href="route('admin.orders.index')"
+                                    :active="route().current('orders.*')"
+                                >
+                                    Orders
+                                </NavLink>
+                            <!-- nav bar for vendors     -->
+                                <NavLink
+                                    :href="route('admin.vendors.index')"
+                                    :active="route().current('vendors.*')"
+                                >
+                                    Vendors
                                 </NavLink>
                             </div>
                         </div>
@@ -78,7 +97,7 @@ const showingNavigationDropdown = ref(false);
 
                                     <template #content>
                                         <DropdownLink
-                                            :href="route('profile.edit')"
+                                            :href="route('admin.profile.edit')"
                                         >
                                             Profile
                                         </DropdownLink>
@@ -153,21 +172,23 @@ const showingNavigationDropdown = ref(false);
                             Dashboard
                         </ResponsiveNavLink>
                         <ResponsiveNavLink
-                            :href="route('products.index')"
+                            :href="route('admin.products.index')"
                             :active="route().current('products.*')"
                         >
                             Products
                         </ResponsiveNavLink>
+                        <ResponsiveNavLink
+                            :href="route('admin.categories.index')"
+                            :active="route().current('categories.*')"
+                        >
+                            Categories
+                        </ResponsiveNavLink>
                     </div>
 
                     <!-- Responsive Settings Options -->
-                    <div
-                        class="border-t border-gray-200 pb-1 pt-4"
-                    >
+                    <div class="border-t border-gray-200 pb-1 pt-4">
                         <div class="px-4">
-                            <div
-                                class="text-base font-medium text-gray-800"
-                            >
+                            <div class="text-base font-medium text-gray-800">
                                 {{ $page.props.auth.user.name }}
                             </div>
                             <div class="text-sm font-medium text-gray-500">
@@ -176,7 +197,7 @@ const showingNavigationDropdown = ref(false);
                         </div>
 
                         <div class="mt-3 space-y-1">
-                            <ResponsiveNavLink :href="route('profile.edit')">
+                            <ResponsiveNavLink :href="route('admin.profile.edit')">
                                 Profile
                             </ResponsiveNavLink>
                             <ResponsiveNavLink
@@ -192,10 +213,7 @@ const showingNavigationDropdown = ref(false);
             </nav>
 
             <!-- Page Heading -->
-            <header
-                class="bg-white shadow"
-                v-if="$slots.header"
-            >
+            <header class="bg-white shadow" v-if="$slots.header">
                 <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
                     <slot name="header" />
                 </div>

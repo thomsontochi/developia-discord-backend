@@ -69,7 +69,8 @@ class ProductFactory extends Factory
             'stock' => fake()->numberBetween(0, 100),
             'category_id' => Category::factory(), // This will create a category if none exists
             'status' => fake()->randomElement(['active', 'inactive']),
-            'image' => 'https://picsum.photos/640/480?random=' . fake()->numberBetween(1, 1000),
+            'image' => 'https://
+            /640/480?random=' . fake()->numberBetween(1, 1000),
              'slug' => $slug,
             'created_at' => fake()->dateTimeBetween('-6 months', 'now'),
             'updated_at' => now(),
