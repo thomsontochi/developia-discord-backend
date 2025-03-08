@@ -3,7 +3,7 @@ import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import { Head, Link } from "@inertiajs/vue3";
 import { ref, computed } from "vue";
 import { useForm } from "@inertiajs/vue3";
-import PendingVendorCard from "@/Components/vendors/PendingVendorCard.vue";
+
 
 const props = defineProps({
     vendors: Object,
@@ -30,10 +30,13 @@ const statusClasses = {
 };
 
 const performSearch = () => {
-    searchForm.get(route("admin.vendors.index"), {
-        preserveState: true,
-        preserveScroll: true,
-    });
+    searchForm.get(
+        route("admin.vendors.index", { page: vendors.current_page }),
+        {
+            preserveState: true,
+            preserveScroll: true,
+        }
+    );
 };
 
 const toggleSelectAll = () => {
@@ -148,19 +151,7 @@ const pendingVendors = computed(() =>
                         </p>
                     </div>
                 </div>
-                <!-- Pending Vendors Cards -->
-                <div v-if="pendingVendors.length" class="mb-6">
-                    <h3 class="text-lg font-medium text-gray-900 mb-4">
-                        Pending Approvals
-                    </h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <PendingVendorCard
-                            v-for="vendor in pendingVendors"
-                            :key="vendor.id"
-                            :vendor="vendor"
-                        />
-                    </div>
-                </div>
+                
 
                 <!-- Filters -->
                 <div class="mb-6 p-4 bg-white rounded-lg shadow">
@@ -318,100 +309,110 @@ const pendingVendors = computed(() =>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
-                            <tr v-for="vendor in vendors.data" :key="vendor.id">
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <input
-                                        type="checkbox"
-                                        v-model="selectedVendors"
-                                        :value="vendor.id"
-                                        class="rounded border-gray-300"
-                                    />
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="flex items-center">
-                                        <div class="flex-shrink-0 h-10 w-10">
-                                            <img
-                                                :src="
-                                                    vendor.store_logo ||
-                                                    '/default-store.png'
-                                                "
-                                                class="h-10 w-10 rounded-full"
-                                            />
-                                        </div>
-                                        <div class="ml-4">
+                                <tr
+                                    v-for="vendor in vendors.data"
+                                    :key="vendor.id"
+                                >
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <input
+                                            type="checkbox"
+                                            v-model="selectedVendors"
+                                            :value="vendor.id"
+                                            class="rounded border-gray-300"
+                                        />
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
                                             <div
-                                                class="text-sm font-medium text-gray-900"
+                                                class="flex-shrink-0 h-10 w-10"
                                             >
-                                                {{ vendor.full_name }}
+                                                <img
+                                                    :src="
+                                                        vendor.store_logo ||
+                                                        '/default-store.png'
+                                                    "
+                                                    class="h-10 w-10 rounded-full"
+                                                />
                                             </div>
-                                            <div class="text-sm text-gray-500">
-                                                {{ vendor.email }}
+                                            <div class="ml-4">
+                                                <div
+                                                    class="text-sm font-medium text-gray-900"
+                                                >
+                                                    {{ vendor.full_name }}
+                                                </div>
+                                                <div
+                                                    class="text-sm text-gray-500"
+                                                >
+                                                    {{ vendor.email }}
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm text-gray-900">
-                                        {{ vendor.store_name }}
-                                    </div>
-                                    <div class="text-sm text-gray-500">
-                                        {{ vendor.business_category }}
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <span
-                                        :class="[
-                                            'px-2 inline-flex text-xs leading-5 font-semibold rounded-full',
-                                            statusClasses[vendor.status],
-                                        ]"
-                                    >
-                                        {{ vendor.status }}
-                                    </span>
-                                </td>
-                                <td
-                                    class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
-                                >
-                                    {{ vendor.created_at }}
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="space-y-1">
-                                        <div class="text-sm">
-                                            Sales:
-                                            {{ vendor.metrics.total_sales }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="text-sm text-gray-900">
+                                            {{ vendor.store_name }}
                                         </div>
-                                        <div class="text-sm">
-                                            Rating:
-                                            {{ vendor.metrics.rating }}/5
+                                        <div class="text-sm text-gray-500">
+                                            {{ vendor.business_category }}
                                         </div>
-                                        <div class="text-sm">
-                                            Products:
-                                            {{ vendor.metrics.products_count }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span
+                                            :class="[
+                                                'px-2 inline-flex text-xs leading-5 font-semibold rounded-full',
+                                                statusClasses[vendor.status],
+                                            ]"
+                                        >
+                                            {{ vendor.status }}
+                                        </span>
+                                    </td>
+                                    <td
+                                        class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                                    >
+                                        {{ vendor.created_at }}
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="space-y-1">
+                                            <div class="text-sm">
+                                                Sales:
+                                                {{ vendor.metrics.total_sales }}
+                                            </div>
+                                            <div class="text-sm">
+                                                Rating:
+                                                {{ vendor.metrics.rating }}/5
+                                            </div>
+                                            <div class="text-sm">
+                                                Products:
+                                                {{
+                                                    vendor.metrics
+                                                        .products_count
+                                                }}
+                                            </div>
                                         </div>
-                                    </div>
-                                </td>
-                                <td
-                                    class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"
-                                >
-                                    <Link
-                                        :href="
-                                            route(
-                                                'admin.vendors.show',
-                                                vendor.id
-                                            )
-                                        "
-                                        class="text-indigo-600 hover:text-indigo-900 mr-3"
+                                    </td>
+                                    <td
+                                        class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"
                                     >
-                                        View
-                                    </Link>
-                                    <button
-                                        class="text-red-600 hover:text-red-900"
-                                        @click="deleteVendor(vendor.id)"
-                                    >
-                                        Delete
-                                    </button>
-                                </td>
-                            </tr>
-                        </tbody>
+                                        <Link
+                                            :href="
+                                                route(
+                                                    'admin.vendors.show',
+                                                    vendor.id
+                                                )
+                                            "
+                                            class="text-indigo-600 hover:text-indigo-900 mr-3"
+                                        >
+                                            View
+                                        </Link>
+                                        <button
+                                            class="text-red-600 hover:text-red-900"
+                                            @click="deleteVendor(vendor.id)"
+                                        >
+                                            Delete
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
                         </table>
                     </div>
 
@@ -523,64 +524,77 @@ const pendingVendors = computed(() =>
                             </div>
                         </div>
                     </div>
-                </div>  
-                
+                </div>
+
                 <!-- Add this after the table/mobile cards section -->
-<div class="mt-4 px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
-    <!-- Mobile pagination -->
-    <div class="flex-1 flex justify-between sm:hidden">
-        <Link
-            v-if="vendors.prev_page_url"
-            :href="vendors.prev_page_url"
-            class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-        >
-            Previous
-        </Link>
-        <Link
-            v-if="vendors.next_page_url"
-            :href="vendors.next_page_url"
-            class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-        >
-            Next
-        </Link>
-    </div>
+                <div
+                    class="mt-4 px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6"
+                >
+                    <!-- Mobile pagination -->
+                    <div class="flex-1 flex justify-between sm:hidden">
+                        <Link
+                            v-if="vendors.prev_page_url"
+                            :href="vendors.prev_page_url"
+                            class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                        >
+                            Previous
+                        </Link>
+                        <Link
+                            v-if="vendors.next_page_url"
+                            :href="vendors.next_page_url"
+                            class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                        >
+                            Next
+                        </Link>
+                    </div>
 
-    <!-- Desktop pagination -->
-    <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-        <div>
-            <p class="text-sm text-gray-700">
-                Showing
-                <span class="font-medium">{{ vendors.from }}</span>
-                to
-                <span class="font-medium">{{ vendors.to }}</span>
-                of
-                <span class="font-medium">{{ vendors.total }}</span>
-                results
-            </p>
-        </div>
-        <div>
-            <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                <Link
-                    v-for="(link, index) in vendors.links"
-                    :key="index"
-                    :href="link.url"
-                    :class="[
-                        'relative inline-flex items-center px-4 py-2 border text-sm font-medium',
-                        link.active
-                            ? 'z-10 bg-indigo-50 border-indigo-500 text-indigo-600'
-                            : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50',
-                        index === 0 ? 'rounded-l-md' : '',
-                        index === vendors.links.length - 1 ? 'rounded-r-md' : '',
-                    ]"
-                    v-html="link.label"
-                ></Link>
-            </nav>
-        </div>
-    </div>
-</div>
+                    <!-- Desktop pagination -->
+                    <div
+                        class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between"
+                    >
+                        <div>
+                            <p class="text-sm text-gray-700">
+                                Showing
+                                <span class="font-medium">{{
+                                    vendors.from
+                                }}</span>
+                                to
+                                <span class="font-medium">{{
+                                    vendors.to
+                                }}</span>
+                                of
+                                <span class="font-medium">{{
+                                    vendors.total
+                                }}</span>
+                                results
+                            </p>
+                        </div>
+                        <div>
+                            <nav
+                                class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
+                                aria-label="Pagination"
+                            >
+                                <Link
+                                    v-for="(link, index) in vendors.links"
+                                    :key="index"
+                                    :href="link.url"
+                                    :class="[
+                                        'relative inline-flex items-center px-4 py-2 border text-sm font-medium',
+                                        link.active
+                                            ? 'z-10 bg-indigo-50 border-indigo-500 text-indigo-600'
+                                            : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50',
+                                        index === 0 ? 'rounded-l-md' : '',
+                                        index === vendors.links.length - 1
+                                            ? 'rounded-r-md'
+                                            : '',
+                                    ]"
+                                    v-html="link.label"
+                                ></Link>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
             </div>
-
-              
         </div>
     </AuthenticatedLayout>
 </template>

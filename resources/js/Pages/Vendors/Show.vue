@@ -2,6 +2,7 @@
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import { Head, Link, useForm } from "@inertiajs/vue3";
 import { ref } from "vue";
+import PendingVendorCard from "@/Components/vendors/PendingVendorCard.vue";
 
 const props = defineProps({
     vendor: Object,
@@ -31,6 +32,26 @@ const updateStatus = (status, reason = '') => {
         preserveScroll: true
     });
 };
+
+const approveVendor = () => {
+    useForm().post(route("admin.vendors.approve", vendor.id), {
+        preserveScroll: true,
+        onSuccess: () => {
+            // Show success message or handle response
+        },
+    });
+};
+
+const rejectVendor = (reason) => {
+    useForm({
+        reason: reason
+    }).post(route("admin.vendors.reject", vendor.id), {
+        preserveScroll: true,
+        onSuccess: () => {
+            showRejectModal.value = false;
+        },
+    });
+};
 </script>
 
 <template>
@@ -57,6 +78,16 @@ const updateStatus = (status, reason = '') => {
 
         <div class="py-8">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+
+                 <!-- Show verification card for pending vendors -->
+                <div v-if="vendor.status === 'pending'" class="mb-6">
+                    <PendingVendorCard 
+                        :vendor="vendor"
+                        @approve="approveVendor"
+                        @reject="showRejectModal = true"
+                    />
+                </div>
+                    
                 <!-- Hero Section -->
                 <div class="mb-8 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl shadow-lg overflow-hidden">
                     <div class="p-6 md:p-8 flex flex-col md:flex-row justify-between items-start md:items-center">
