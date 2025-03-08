@@ -15,6 +15,8 @@ import {
     ExclamationTriangleIcon,
 } from "@heroicons/vue/24/solid";
 
+
+
 const mobileMenuOpen = ref(false);
 
 defineProps({
@@ -362,9 +364,9 @@ defineProps({
                             <h3
                                 class="text-lg font-semibold text-gray-800 flex items-center gap-3"
                             >
-                                <ClipboardListIcon
+                                <!-- <ClipboardListIcon
                                     class="h-6 w-6 text-orange-500"
-                                />
+                                /> -->
                                 Pending Applications
                             </h3>
                             <span

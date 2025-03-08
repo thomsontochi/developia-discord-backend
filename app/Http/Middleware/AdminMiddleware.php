@@ -15,11 +15,26 @@ class AdminMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // return $next($request);
-        if (!auth()->check() || auth()->user()->role !== 'admin') {
-            return redirect()->route('dashboard')->with('error', 'Unauthorized access.');
-        }
+        // // return $next($request);
+        // if (!auth()->check() || auth()->user()->role !== 'admin') {
+        //     return redirect()->route('dashboard')->with('error', 'Unauthorized access.');
+        // }
 
+        // return $next($request);
+
+        \Log::info('Admin middleware check', [
+            'is_authenticated' => auth()->check(),
+            'user' => auth()->user(),
+            'role' => auth()->user()?->role
+        ]);
+
+        if (!auth()->check() || !in_array(auth()->user()->role, ['super_admin', 'admin'])) {
+            if ($request->wantsJson()) {
+                return response()->json(['message' => 'Unauthorized'], 403);
+            }
+            return redirect('/')->with('error', 'Unauthorized access');
+        }
+    
         return $next($request);
     }
 }

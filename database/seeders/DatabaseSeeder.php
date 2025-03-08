@@ -25,6 +25,7 @@ class DatabaseSeeder extends Seeder
             'first_name' => 'Vendly',
             'last_name' => 'Admin',
             'email' => 'vendlyAdmin@example.com',
+            'role' => 'admin',
             // 'name' => 'vendlyAdmin',
             // 'email' => 'vendlyAdmin@example.com',
             //  password = password

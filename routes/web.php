@@ -24,6 +24,7 @@ Route::get('/', function () {
 });
 
 Route::get('/dashboard', function () {
+
     // Placeholder stats without actual database queries
     $stats = [
         'vendors' => [
@@ -96,10 +97,9 @@ Route::get('/dashboard', function () {
             ],
         ],
     ];
-   
+
     return Inertia::render('Dashboard', [
         'stats' => $stats,
-        
     ]);
 })->middleware(['auth', 'verified'])->name('dashboard');
 
@@ -141,6 +141,13 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/vendor/{vendor}', [VendorController::class, 'show'])->name('vendors.show');
     Route::put('vendors/{vendor}/status', [VendorController::class, 'updateStatus'])
         ->name('vendors.update-status');
+
+    Route::post('/vendors/{vendor}/approve', [VendorController::class, 'approve'])
+        ->name('vendors.approve');
+    Route::post('/vendors/{vendor}/reject', [VendorController::class, 'reject'])
+        ->name('vendors.reject');
+    Route::post('/vendors/{vendor}/suspend', [VendorController::class, 'suspend'])
+        ->name('vendors.suspend');
 
     // Profile Routes...
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -184,4 +191,4 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 // Revenue reports
 
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';

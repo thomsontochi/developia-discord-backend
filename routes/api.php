@@ -9,8 +9,8 @@ use App\Http\Controllers\Auth\AuthenticatedSessionController;
 
 Route::prefix('v1')->group(function () {
 
-    
-    
+
+
     // Customer Auth Routes
     Route::post('login', [AuthenticatedSessionController::class, 'apiLogin']);
     Route::post('register', [RegisteredUserController::class, 'apiRegister']);
@@ -20,26 +20,24 @@ Route::prefix('v1')->group(function () {
     Route::post('vendor/login', [VendorAuthController::class, 'login'])->name('api.vendor.login');
 
     Route::get('check-verification/{email}', [VendorAuthController::class, 'checkVerificationStatus'])
-    ->name('vendor.verification.check');
+        ->name('vendor.verification.check');
 
     // Route::get('verify/{id}/{hash}', [VendorAuthController::class, 'verify'])
     //         ->middleware(['signed'])
     //         ->name('vendor.verification.verify');
 
     Route::get('/vendor/verify-email/{id}/{hash}', [VendorAuthController::class, 'verify'])
-    ->middleware(['signed'])
-    ->name('vendor.verification.verify');
+        ->middleware(['signed'])
+        ->name('vendor.verification.verify');
 
     // Email Verification Routes
     Route::prefix('vendor/email')->middleware('auth:vendor')->group(function () {
 
-        
+
 
         Route::post('verification-notification', [VendorAuthController::class, 'resendVerification'])
             ->middleware(['throttle:6,1'])
             ->name('vendor.verification.send');
-
-       
     });
 
     // Existing Product Routes
@@ -49,7 +47,7 @@ Route::prefix('v1')->group(function () {
 
 
     // Protected Vendor Routes
-   Route::middleware('auth:sanctum')->prefix('vendor')->group(function () {
+    Route::middleware('auth:sanctum')->prefix('vendor')->group(function () {
 
         // Onboarding Steps
         Route::post('setup-store', [VendorAuthController::class, 'setupStore']);
@@ -80,7 +78,7 @@ Route::prefix('v1')->group(function () {
         Route::put('vendors/{vendor}/status', [VendorController::class, 'updateStatus'])->name('api.admin.vendors.status');
     });
 
-    
+
     Route::middleware(['auth:sanctum', 'customer'])->prefix('customer')->group(function () {
         // Customer specific routes here
     });

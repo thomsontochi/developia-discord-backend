@@ -3,60 +3,34 @@
 namespace App\Http\Controllers;
 
 use App\Models\Vendor;
+use Illuminate\Container\Attributes\DB;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class VendorController extends Controller
 {
-    // public function index(){
 
-    //     // get aa vendors
-    //     $vendors = Vendor::query()
-    //         ->latest()
-    //         ->paginate(10);
-
-    //         $stats = [
-    //             'total' => Vendor::count(),
-    //             'active' => Vendor::where('status', 'approved')->count(),
-    //             'inactive' => Vendor::where('status', 'suspended')->count(),
-    //             'pending' => Vendor::where('status', 'pending')->count(),
-    //             'newThisMonth' => Vendor::where('status', 'approved')
-    //                 ->where('onboarding_step->current_step', '>', 1)
-    //                 ->whereMonth('created_at', now()->month)
-    //                 ->count(),
-    //             'suspended' => Vendor::where('status', 'suspended')
-    //                 ->where('onboarding_step->current_step', '>', 1)
-    //                 ->count(),
-    //         ];
-
-    //     return Inertia::render('Vendors/Index',  [
-    //         'vendors' => $vendors,
-    //         'stats' => $stats,
-    //     ]);
-
-        
-    // }
 
     public function index(Request $request)
     {
         $vendors = Vendor::query()
             ->with(['activityLogs' => fn($q) => $q->latest()->limit(5), 'communications'])
-            ->when($request->search, function($query, $search) {
+            ->when($request->search, function ($query, $search) {
                 $query->where('store_name', 'like', "%{$search}%")
                     ->orWhere('full_name', 'like', "%{$search}%")
                     ->orWhere('email', 'like', "%{$search}%");
             })
-            ->when($request->status, function($query, $status) {
+            ->when($request->status, function ($query, $status) {
                 $query->where('status', $status);
             })
-            ->when($request->date_from, function($query, $date) {
+            ->when($request->date_from, function ($query, $date) {
                 $query->whereDate('created_at', '>=', $date);
             })
-            ->when($request->date_to, function($query, $date) {
+            ->when($request->date_to, function ($query, $date) {
                 $query->whereDate('created_at', '<=', $date);
             })
-            ->when($request->performance, function($query, $performance) {
-                switch($performance) {
+            ->when($request->performance, function ($query, $performance) {
+                switch ($performance) {
                     case 'high':
                         $query->where('average_rating', '>=', 4);
                         break;
@@ -70,7 +44,7 @@ class VendorController extends Controller
             })
             ->latest()
             ->paginate(10)
-            ->through(function($vendor) {
+            ->through(function ($vendor) {
                 return [
                     'id' => $vendor->id,
                     'full_name' => $vendor->full_name,
@@ -125,7 +99,7 @@ class VendorController extends Controller
         ]);
     }
 
-    
+
 
     public function create()
     {
@@ -158,22 +132,75 @@ class VendorController extends Controller
 
     public function show(Vendor $vendor)
     {
-        return Inertia::render('Admin/Vendors/Show', [
-            'vendor' => $vendor->load('products', 'orders')
+        
+        $vendor->load([
+            'products' => function($query) {
+                $query->withCount(['orders as sales_count' => function($q) {
+                    $q->whereHas('order', function($subQ) {
+                        $subQ->where('status', 'completed');
+                    });
+                }]);
+            },
+            'activityLogs' => function($query) {
+                $query->latest()->limit(5);
+            }
+        ]);
+    
+        return Inertia::render('Vendors/Show', [
+            'vendor' => [
+                // Basic Information
+                'id' => $vendor->id,
+                'full_name' => $vendor->full_name,
+                'email' => $vendor->email,
+                'phone' => $vendor->phone,
+                'created_at' => $vendor->created_at->format('M d, Y'),
+                
+                // Store Information
+                'store_name' => $vendor->store_name,
+                'store_description' => $vendor->store_description,
+                'business_category' => $vendor->business_category,
+                'store_logo' => $vendor->store_logo,
+                'address' => $vendor->address,
+                'business_hours' => $vendor->business_hours,
+                
+                // Status & Verification
+                'status' => $vendor->status,
+                'is_verified' => $vendor->is_verified,
+                'verification_documents' => $vendor->verification_documents,
+                
+                // Performance Metrics
+                'metrics' => [
+                    'total_sales' => $vendor->total_sales,
+                    'products_count' => $vendor->products->count(),
+                    'rating' => $vendor->average_rating,
+                    'fulfillment_rate' => $vendor->fulfillment_rate . '%',
+                    'commission_rate' => $vendor->commission_rate . '%',
+                    'return_rate' => $vendor->return_rate . '%'
+                ],
+                
+                // Products List
+                'products' => $vendor->products->map(fn($product) => [
+                    'id' => $product->id,
+                    'name' => $product->name,
+                    'price' => $product->price,
+                    'stock' => $product->stock,
+                    'status' => $product->status,
+                    'is_visible' => $product->is_visible,
+                    'sales_count' => $product->sales_count ?? 0,
+                    'created_at' => $product->created_at->format('M d, Y')
+                ]),
+                
+                // Recent Activity
+                'recent_activities' => $vendor->activityLogs->map(fn($log) => [
+                    'action' => $log->action,
+                    'date' => $log->created_at->diffForHumans(),
+                    'details' => $log->details
+                ])
+            ]
         ]);
     }
 
-    // public function updateStatus(Request $request, Vendor $vendor)
-    // {
-    //     $validated = $request->validate([
-    //         'status' => 'required|in:pending,approved,suspended',
-    //         'rejection_reason' => 'required_if:status,suspended'
-    //     ]);
 
-    //     $vendor->update($validated);
-
-    //     return back()->with('success', 'Vendor status updated');
-    // }
 
     public function updateStatus(Request $request, Vendor $vendor)
     {
@@ -212,11 +239,11 @@ class VendorController extends Controller
             'reason' => 'required_if:action,suspend'
         ]);
 
-        foreach($validated['vendor_ids'] as $id) {
+        foreach ($validated['vendor_ids'] as $id) {
             $vendor = Vendor::find($id);
-            if(!$vendor) continue;
+            if (!$vendor) continue;
 
-            switch($validated['action']) {
+            switch ($validated['action']) {
                 case 'approve':
                     $vendor->update(['status' => 'approved']);
                     break;
@@ -235,5 +262,120 @@ class VendorController extends Controller
         return back()->with('success', 'Bulk action completed successfully');
     }
 
+    public function approve(Vendor $vendor)
+    {
+        // Check if vendor is in pending status
+        if ($vendor->status !== 'pending') {
+            return back()->with('error', 'Only pending vendors can be approved');
+        }
 
+        DB::beginTransaction();
+        try {
+            // Update vendor status
+            $vendor->update([
+                'status' => 'approved',
+                'approved_at' => now()
+            ]);
+
+            // Make products visible if any exist
+            $vendor->products()->update(['is_visible' => true]);
+
+            // Log the action
+            $vendor->logActivity('vendor_approved', [
+                'approved_by' => auth()->user()->name,
+                'approved_at' => now()
+            ]);
+
+            // Send approval notification
+            $vendor->notify(new VendorStatusChanged('approved'));
+
+            DB::commit();
+
+            return back()->with('success', 'Vendor has been approved successfully');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Vendor approval failed: ' . $e->getMessage());
+            return back()->with('error', 'Failed to approve vendor');
+        }
+    }
+
+    public function reject(Request $request, Vendor $vendor)
+    {
+        $request->validate([
+            'reason' => 'required|string|max:500'
+        ]);
+
+        if ($vendor->status !== 'pending') {
+            return back()->with('error', 'Only pending vendors can be rejected');
+        }
+
+        DB::beginTransaction();
+        try {
+            // Update vendor status
+            $vendor->update([
+                'status' => 'rejected',
+                'rejection_reason' => $request->reason
+            ]);
+
+            // Hide all products
+            $vendor->products()->update(['is_visible' => false]);
+
+            // Log the action
+            $vendor->logActivity('vendor_rejected', [
+                'rejected_by' => auth()->user()->name,
+                'reason' => $request->reason
+            ]);
+
+            // Send rejection notification
+            $vendor->notify(new VendorStatusChanged('rejected', $request->reason));
+
+            DB::commit();
+
+            return back()->with('success', 'Vendor has been rejected');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Vendor rejection failed: ' . $e->getMessage());
+            return back()->with('error', 'Failed to reject vendor');
+        }
+    }
+
+    public function suspend(Request $request, Vendor $vendor)
+    {
+        $request->validate([
+            'reason' => 'required|string|max:500'
+        ]);
+
+        if ($vendor->status !== 'approved') {
+            return back()->with('error', 'Only approved vendors can be suspended');
+        }
+
+        DB::beginTransaction();
+        try {
+            // Update vendor status
+            $vendor->update([
+                'status' => 'suspended',
+                'suspension_reason' => $request->reason
+            ]);
+
+            // Hide all products
+            $vendor->products()->update(['is_visible' => false]);
+
+            // Log the action
+            $vendor->logActivity('vendor_suspended', [
+                'suspended_by' => auth()->user()->name,
+                'reason' => $request->reason
+            ]);
+
+            // Send suspension notification
+            $vendor->notify(new VendorStatusChanged('suspended', $request->reason));
+
+            DB::commit();
+
+            return back()->with('success', 'Vendor has been suspended');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Vendor suspension failed: ' . $e->getMessage());
+            return back()->with('error', 'Failed to suspend vendor');
+        }
+    }
 }
