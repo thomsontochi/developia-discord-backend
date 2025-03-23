@@ -115,6 +115,24 @@ class AuthenticatedSessionController extends Controller
     public function apiLogout(Request $request)
     {
         $request->user()->currentAccessToken()->delete();
-        return response()->json(['message' => 'Logged out successfully']);
+
+        return response()->json([
+            'message' => 'Logged out successfully'
+        ]);
+    }
+
+    public function getAuthenticatedUser(Request $request)
+    {
+        $user = $request->user();
+
+        return response()->json([
+            'user' => $user,
+            'role' => $user->role,
+            'permissions' => [
+                'isAdmin' => $user->isAdmin(),
+                'isCustomer' => $user->isCustomer(),
+            ],
+            'verified' => !is_null($user->email_verified_at)
+        ]);
     }
 }

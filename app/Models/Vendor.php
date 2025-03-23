@@ -2,7 +2,10 @@
 
 namespace App\Models;
 
+use App\Models\Order;
+use App\Models\Dispute;
 use App\Models\Product;
+use App\Models\OrderItem;
 use App\Models\VendorActivityLog;
 use Laravel\Sanctum\HasApiTokens;
 use App\Models\VendorCommunication;
@@ -143,7 +146,7 @@ class Vendor extends Authenticatable implements MustVerifyEmail
     }
 
 
-   
+
 
     public function activityLogs(): HasMany
     {
@@ -177,5 +180,36 @@ class Vendor extends Authenticatable implements MustVerifyEmail
     public function getUnreadCommunicationsCount(): int
     {
         return $this->communications()->whereNull('read_at')->count();
+    }
+
+
+    public function disputes()
+    {
+        return $this->hasManyThrough(Dispute::class, Order::class);
+    }
+
+    public function orderItems()
+    {
+        return $this->hasManyThrough(OrderItem::class, Order::class);
+    }
+
+    public function payments()
+    {
+        return $this->hasManyThrough(Payment::class, Order::class);
+    }
+
+    public function isAdmin()
+    {
+        return false; // Vendors are never admins
+    }
+
+    public function isCustomer()
+    {
+        return false; // Vendors are never customers
+    }
+
+    public function isVendor()
+    {
+        return true;
     }
 }

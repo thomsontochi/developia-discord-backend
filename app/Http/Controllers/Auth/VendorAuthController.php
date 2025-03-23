@@ -59,11 +59,19 @@ class VendorAuthController extends Controller
             // Return response with token
             return response()->json([
                 'message' => 'Registration successful. Please check your email for verification.',
-                'vendor' => new VendorResource($vendor),
-                'token' => $token, // Include token in response
+                'user' => new VendorResource($vendor),
+                'userType' => 'vendor',
+                'token' => $token,
+                'status' => $vendor->status,
+                'onboarding' => [
+                    'completed' => $vendor->has_completed_onboarding,
+                    'current_step' => $vendor->getCurrentOnboardingStep(),
+                    'completed_steps' => $vendor->onboarding_step['completed_steps'] ?? []
+                ],
                 'verification' => [
                     'sent' => true,
                     'email' => $vendor->email,
+                    'verified' => false
                 ]
             ], 201);
         } catch (ValidationException $e) {
@@ -88,43 +96,92 @@ class VendorAuthController extends Controller
     }
 
 
+    // public function login(Request $request)
+    // {
+    //     $request->validate([
+    //         'password' => 'required|string',
+    //     ]);
+
+    //     // Check if login is via email or store ID
+    //     if ($request->has('email')) {
+    //         $credentials = $request->validate([
+    //             'email' => 'required|email',
+    //         ]);
+    //         $field = 'email';
+    //     } else {
+    //         $credentials = $request->validate([
+    //             'storeId' => 'required|string',
+    //         ]);
+    //         $field = 'store_id';
+    //     }
+
+    //     try {
+    //         if (Auth::guard('vendor')->attempt([
+    //             $field => $credentials[$field === 'email' ? 'email' : 'storeId'],
+    //             'password' => $request->password
+    //         ])) {
+    //             $vendor = Auth::guard('vendor')->user();
+    //             $token = $vendor->createToken('vendor-token')->plainTextToken;
+
+    //             return response()->json([
+    //                 'user' => new VendorResource($vendor),
+    //                 'userType' => 'vendor',
+    //                 'token' => $token,
+    //                 'message' => 'Login successful',
+    //                 'status' => $vendor->status,
+    //                 'onboarding' => [
+    //                     'completed' => $vendor->has_completed_onboarding,
+    //                     'current_step' => $vendor->getCurrentOnboardingStep(),
+    //                     'completed_steps' => $vendor->onboarding_step['completed_steps'] ?? []
+    //                 ],
+    //                 'verified' => !is_null($vendor->email_verified_at)
+    //             ]);
+    //         }
+
+    //         return response()->json([
+    //             'message' => 'Invalid credentials'
+    //         ], 401);
+    //     } catch (\Exception $e) {
+    //         \Log::error('Vendor login error: ' . $e->getMessage());
+    //         return response()->json([
+    //             'message' => 'An error occurred during login'
+    //         ], 500);
+    //     }
+    // }
+
     public function login(Request $request)
     {
-        $request->validate([
-            'password' => 'required|string',
-        ]);
-
-        // Check if login is via email or store ID
-        if ($request->has('email')) {
-            $credentials = $request->validate([
-                'email' => 'required|email',
-            ]);
-            $field = 'email';
-        } else {
-            $credentials = $request->validate([
-                'storeId' => 'required|string',
-            ]);
-            $field = 'store_id'; // Assuming this is your database column name
-        }
-
         try {
-            if (Auth::guard('vendor')->attempt([
-                $field => $credentials[$field === 'email' ? 'email' : 'storeId'],
-                'password' => $request->password
-            ])) {
-                $vendor = Auth::guard('vendor')->user();
-                $token = $vendor->createToken('vendor-token')->plainTextToken;
+            $request->validate([
+                'email' => 'required|email',
+                'password' => 'required|string',
+            ]);
 
+            // Find the vendor
+            $vendor = Vendor::where('email', $request->email)->first();
+
+            if (!$vendor || !Hash::check($request->password, $vendor->password)) {
                 return response()->json([
-                    'user' => $vendor,
-                    'token' => $token,
-                    'message' => 'Login successful'
-                ]);
+                    'message' => 'Invalid credentials'
+                ], 401);
             }
 
+            // Create token after successful validation
+            $token = $vendor->createToken('vendor-token')->plainTextToken;
+
             return response()->json([
-                'message' => 'Invalid credentials'
-            ], 401);
+                'user' => new VendorResource($vendor),
+                'userType' => 'vendor',
+                'token' => $token,
+                'message' => 'Login successful',
+                'status' => $vendor->status,
+                'onboarding' => [
+                    'completed' => $vendor->has_completed_onboarding,
+                    'current_step' => $vendor->getCurrentOnboardingStep(),
+                    'completed_steps' => $vendor->onboarding_step['completed_steps'] ?? []
+                ],
+                'verified' => !is_null($vendor->email_verified_at)
+            ]);
         } catch (\Exception $e) {
             \Log::error('Vendor login error: ' . $e->getMessage());
             return response()->json([
@@ -136,7 +193,7 @@ class VendorAuthController extends Controller
     /**
      * Step 2: Store Setup
      */
-    
+
 
     public function setupStore(Request $request)
     {
@@ -181,72 +238,110 @@ class VendorAuthController extends Controller
         ]);
     }
 
+    // public function setupPayment(Request $request)
+    // {
+    //     Log::info('Payment setup request received', [
+    //         'data' => $request->all(),
+    //         'headers' => $request->headers->all()
+    //     ]);
+
+    //     try {
+    //         $vendor = $request->user();
+
+    //         if (!$vendor) {
+    //             Log::error('Unauthorized payment setup attempt');
+    //             return response()->json([
+    //                 'message' => 'Unauthenticated'
+    //             ], 401);
+    //         }
+
+    //         // Validate the request
+    //         $validated = $request->validate([
+    //             'bank_name' => 'required|string',
+    //             'account_number' => 'required|string',
+    //             'account_name' => 'required|string',
+    //         ]);
+
+    //         Log::info('Payment validation passed', [
+    //             'vendor_id' => $vendor->id,
+    //             'validated_data' => $validated
+    //         ]);
+
+    //         // Store the payment details
+    //         $vendor->update([
+    //             'payment_details' => $validated
+    //         ]);
+
+    //         $vendor->updateOnboardingStep(3);
+    //         $vendor->update(['has_completed_onboarding' => true]);
+
+    //         Log::info('Payment setup completed', [
+    //             'vendor_id' => $vendor->id
+    //         ]);
+
+    //         return response()->json([
+    //             'message' => 'Payment setup completed',
+    //             'vendor' => new VendorResource($vendor)
+    //         ]);
+    //     } catch (ValidationException $e) {
+    //         Log::error('Payment setup validation failed', [
+    //             'errors' => $e->errors()
+    //         ]);
+    //         return response()->json([
+    //             'message' => 'Payment setup failed',
+    //             'errors' => $e->errors()
+    //         ], 422);
+    //     } catch (\Exception $e) {
+    //         Log::error('Payment setup failed', [
+    //             'error' => $e->getMessage(),
+    //             'trace' => $e->getTraceAsString()
+    //         ]);
+    //         return response()->json([
+    //             'message' => 'Payment setup failed',
+    //             'error' => $e->getMessage()
+    //         ], 500);
+    //     }
+    // }
+
+
     public function setupPayment(Request $request)
     {
-        Log::info('Payment setup request received', [
-            'data' => $request->all(),
-            'headers' => $request->headers->all()
-        ]);
-    
         try {
             $vendor = $request->user();
-    
+
             if (!$vendor) {
-                Log::error('Unauthorized payment setup attempt');
                 return response()->json([
                     'message' => 'Unauthenticated'
                 ], 401);
             }
-    
-            // Validate the request
+
+            // Update validation to handle nested payment_details
             $validated = $request->validate([
-                'bank_name' => 'required|string',
-                'account_number' => 'required|string',
-                'account_name' => 'required|string',
+                'payment_details.bank_name' => 'required|string',
+                'payment_details.account_number' => 'required|string',
+                'payment_details.account_name' => 'required|string',
             ]);
-    
-            Log::info('Payment validation passed', [
-                'vendor_id' => $vendor->id,
-                'validated_data' => $validated
-            ]);
-    
-            // Store the payment details
+
+            // Store the payment details as is
             $vendor->update([
-                'payment_details' => $validated
+                'payment_details' => $request->payment_details
             ]);
-    
+
             $vendor->updateOnboardingStep(3);
             $vendor->update(['has_completed_onboarding' => true]);
-    
-            Log::info('Payment setup completed', [
-                'vendor_id' => $vendor->id
-            ]);
-    
+
             return response()->json([
                 'message' => 'Payment setup completed',
                 'vendor' => new VendorResource($vendor)
             ]);
-    
         } catch (ValidationException $e) {
-            Log::error('Payment setup validation failed', [
-                'errors' => $e->errors()
-            ]);
             return response()->json([
                 'message' => 'Payment setup failed',
                 'errors' => $e->errors()
             ], 422);
-        } catch (\Exception $e) {
-            Log::error('Payment setup failed', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            return response()->json([
-                'message' => 'Payment setup failed',
-                'error' => $e->getMessage()
-            ], 500);
         }
     }
-   
+
 
     public function uploadDocuments(Request $request)
     {
@@ -311,7 +406,7 @@ class VendorAuthController extends Controller
         }
 
         // Redirect to your actual frontend URL
-        return redirect('http://localhost:5174/vendor/email-verification?status=success');
+        return redirect('http://localhost:5173/vendor/email-verification?status=success');
     }
 
     public function resendVerification(Request $request)
@@ -327,14 +422,41 @@ class VendorAuthController extends Controller
         return response()->json(['message' => 'Verification link sent']);
     }
 
+    // public function logout(Request $request)
+    // {
+    //     Auth::guard('vendor')->logout();
+
+    //     $request->session()->invalidate();
+    //     $request->session()->regenerateToken();
+
+    //     return response()->json(['message' => 'Logged out successfully']);
+    // }
+
     public function logout(Request $request)
     {
-        Auth::guard('vendor')->logout();
+        try {
+            // Get the current vendor
+            $vendor = $request->user();
 
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
+            if (!$vendor) {
+                return response()->json([
+                    'message' => 'No authenticated vendor found'
+                ], 401);
+            }
 
-        return response()->json(['message' => 'Logged out successfully']);
+            // Revoke the current token
+            $vendor->currentAccessToken()->delete();
+
+            return response()->json([
+                'message' => 'Logged out successfully'
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Vendor logout failed: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Logout failed',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
 
@@ -357,5 +479,4 @@ class VendorAuthController extends Controller
             ]
         ]);
     }
-
 }

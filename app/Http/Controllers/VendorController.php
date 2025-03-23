@@ -2,10 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Vendor;
-use Illuminate\Container\Attributes\DB;
-use Illuminate\Http\Request;
+use DB;
 use Inertia\Inertia;
+use App\Models\Vendor;
+// use Illuminate\Container\Attributes\DB;
+use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Storage;
+use App\Notifications\VendorStatusChanged;
 
 class VendorController extends Controller
 {
@@ -132,20 +136,20 @@ class VendorController extends Controller
 
     public function show(Vendor $vendor)
     {
-        
+
         $vendor->load([
-            'products' => function($query) {
-                $query->withCount(['orders as sales_count' => function($q) {
-                    $q->whereHas('order', function($subQ) {
+            'products' => function ($query) {
+                $query->withCount(['orders as sales_count' => function ($q) {
+                    $q->whereHas('order', function ($subQ) {
                         $subQ->where('status', 'completed');
                     });
                 }]);
             },
-            'activityLogs' => function($query) {
+            'activityLogs' => function ($query) {
                 $query->latest()->limit(5);
             }
         ]);
-    
+
         return Inertia::render('Vendors/Show', [
             'vendor' => [
                 // Basic Information
@@ -154,7 +158,7 @@ class VendorController extends Controller
                 'email' => $vendor->email,
                 'phone' => $vendor->phone,
                 'created_at' => $vendor->created_at->format('M d, Y'),
-                
+
                 // Store Information
                 'store_name' => $vendor->store_name,
                 'store_description' => $vendor->store_description,
@@ -162,12 +166,12 @@ class VendorController extends Controller
                 'store_logo' => $vendor->store_logo,
                 'address' => $vendor->address,
                 'business_hours' => $vendor->business_hours,
-                
+
                 // Status & Verification
                 'status' => $vendor->status,
                 'is_verified' => $vendor->is_verified,
                 'verification_documents' => $vendor->verification_documents,
-                
+
                 // Performance Metrics
                 'metrics' => [
                     'total_sales' => $vendor->total_sales,
@@ -177,7 +181,7 @@ class VendorController extends Controller
                     'commission_rate' => $vendor->commission_rate . '%',
                     'return_rate' => $vendor->return_rate . '%'
                 ],
-                
+
                 // Products List
                 'products' => $vendor->products->map(fn($product) => [
                     'id' => $product->id,
@@ -189,7 +193,7 @@ class VendorController extends Controller
                     'sales_count' => $product->sales_count ?? 0,
                     'created_at' => $product->created_at->format('M d, Y')
                 ]),
-                
+
                 // Recent Activity
                 'recent_activities' => $vendor->activityLogs->map(fn($log) => [
                     'action' => $log->action,
@@ -262,8 +266,10 @@ class VendorController extends Controller
         return back()->with('success', 'Bulk action completed successfully');
     }
 
+
     public function approve(Vendor $vendor)
     {
+
         // Check if vendor is in pending status
         if ($vendor->status !== 'pending') {
             return back()->with('error', 'Only pending vendors can be approved');
@@ -376,6 +382,29 @@ class VendorController extends Controller
             DB::rollBack();
             \Log::error('Vendor suspension failed: ' . $e->getMessage());
             return back()->with('error', 'Failed to suspend vendor');
+        }
+    }
+
+
+    public function destroy(Vendor $vendor)
+    {
+        DB::beginTransaction();
+        try {
+            // Delete associated image if exists
+            if ($vendor->store_logo) {
+                Storage::disk('public')->delete($vendor->store_logo);
+            }
+
+            // Delete vendor
+            $vendor->delete();
+
+            DB::commit();
+
+            return back()->with('success', 'Vendor deleted successfully');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Vendor deletion failed: ' . $e->getMessage());
+            return back()->with('error', 'Failed to delete vendor');
         }
     }
 }

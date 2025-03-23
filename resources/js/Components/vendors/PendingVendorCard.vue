@@ -152,7 +152,7 @@ const form = useForm({
         </div>
 
         <!-- Action Buttons -->
-        <div class="px-4 py-3 bg-gray-50 text-right space-x-2">
+        <!-- <div class="px-4 py-3 bg-gray-50 text-right space-x-2">
             <button @click="$emit('approve', vendor.id)"
                     :disabled="verificationProgress.percentage < 100"
                     class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50">
@@ -162,7 +162,7 @@ const form = useForm({
                     class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700">
                 Reject
             </button>
-        </div>
+        </div> -->
 
         <!-- Document Preview Modal -->
         <div v-if="showDocumentModal" 

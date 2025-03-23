@@ -110,19 +110,74 @@ class VendorController extends Controller
      * This includes completion status and profile data
      */
 
-    public function profile()
-    {
-        $vendor = auth('vendor')->user();
-        $vendor->load(['products', 'orders']); // Eager load relationships
-
-        // Calculate profile completion percentage
-        $completionStatus = $this->calculateProfileCompletion($vendor);
-
-        return response()->json([
-            'vendor' => new VendorResource($vendor),
-            'completion_status' => $completionStatus
-        ]);
-    }
+     public function profile(Request $request)
+     {
+        $vendor = $request->user();
+    
+        if (!$vendor || !($vendor instanceof \App\Models\Vendor)) {
+            return response()->json([
+                'message' => 'Unauthenticated',
+                'status' => 'error'
+            ], 401);
+        }
+        
+         
+         // Eager load necessary relationships
+         $vendor->load([
+             'products' => function($query) {
+                 $query->latest()->limit(5);
+             },
+             'orders' => function($query) {
+                 $query->latest()->limit(5);
+             },
+             'activityLogs' => function($query) {
+                 $query->latest()->limit(5);
+             }
+         ]);
+     
+         // Get profile completion status
+         $completionStatus = $this->calculateProfileCompletion($vendor);
+     
+         // Calculate key metrics
+         $metrics = [
+             'total_sales' => $vendor->orders()->where('status', 'completed')->count(),
+             'total_products' => $vendor->products()->count(),
+             'pending_orders' => $vendor->orders()->where('status', 'pending')->count(),
+             'rating' => $vendor->products()->avg('rating') ?? 0,
+             'total_revenue' => $vendor->orders()->where('status', 'completed')->sum('total_amount'),
+         ];
+     
+         return response()->json([
+             'vendor' => new VendorResource($vendor),
+             'store' => [
+                 'name' => $vendor->store_name,
+                 'description' => $vendor->store_description,
+                 'logo' => $vendor->store_logo,
+                 'business_category' => $vendor->business_category,
+                 'address' => $vendor->address,
+                 'business_hours' => $vendor->business_hours,
+                 'payment_details' => $vendor->payment_details,
+             ],
+             'verification' => [
+                 'is_verified' => $vendor->is_verified,
+                 'email_verified_at' => $vendor->email_verified_at,
+                 'status' => $vendor->status,
+                 'documents' => $vendor->verification_documents
+             ],
+             'onboarding' => [
+                 'completed' => $vendor->has_completed_onboarding,
+                 'current_step' => $vendor->getCurrentOnboardingStep(),
+                 'completed_steps' => $vendor->onboarding_step['completed_steps'] ?? []
+             ],
+             'metrics' => $metrics,
+             'completion_status' => $completionStatus,
+             'recent_activity' => [
+                 'orders' => $vendor->orders,
+                 'products' => $vendor->products,
+                 'logs' => $vendor->activityLogs
+             ]
+         ]);
+     }
 
     /**
      * Calculate profile completion percentage

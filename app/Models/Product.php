@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Vendor;
+use App\Models\Dispute;
 use App\Models\Category;
 use App\Models\OrderItem;
 use Illuminate\Support\Str;
@@ -93,5 +94,15 @@ class Product extends Model
             ->whereHas('order', function ($query) {
                 $query->where('status', 'completed');
             });
+    }
+
+    public function reviews()
+    {
+        return $this->hasMany(Review::class);
+    }
+
+    public function disputes()
+    {
+        return $this->hasManyThrough(Dispute::class, OrderItem::class);
     }
 }

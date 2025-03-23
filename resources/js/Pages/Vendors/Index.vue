@@ -3,7 +3,10 @@ import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import { Head, Link } from "@inertiajs/vue3";
 import { ref, computed } from "vue";
 import { useForm } from "@inertiajs/vue3";
+import { useToast } from "vue-toastification";
+import DeleteModal from "../../Components/vendors/DeleteModal.vue";
 
+const toast = useToast();
 
 const props = defineProps({
     vendors: Object,
@@ -58,7 +61,11 @@ const bulkAction = (action) => {
         onSuccess: () => {
             selectedVendors.value = [];
             selectAll.value = false;
+            toast.success("Bulk action completed successfully");
         },
+        onError: () => {
+            toast.error("Failed to complete bulk action");
+        }
     });
 };
 
@@ -67,15 +74,26 @@ const updateVendorStatus = (vendorId, status) => {
         status: status,
     }).put(route("admin.vendors.update-status", vendorId), {
         preserveScroll: true,
+        onSuccess: () => {
+            toast.success("Vendor status updated successfully");
+        },
+        onError: () => {
+            toast.error("Failed to update vendor status");
+        }
     });
 };
 
-const deleteVendor = (vendorId) => {
-    if (confirm("Are you sure you want to delete this vendor?")) {
-        useForm().delete(route("admin.vendors.destroy", vendorId), {
-            preserveScroll: true,
-        });
-    }
+const deleteVendor = () => {
+    useForm().delete(route("admin.vendors.destroy", vendorToDelete.value), {
+        preserveScroll: true,
+        onSuccess: () => {
+            toast.success("Vendor deleted successfully");
+            showDeleteModal.value = false;
+        },
+        onError: () => {
+            toast.error("Failed to delete vendor");
+        }
+    });
 };
 
 const pendingVendors = computed(() =>
@@ -597,4 +615,11 @@ const pendingVendors = computed(() =>
             </div>
         </div>
     </AuthenticatedLayout>
+
+     <!-- Delete Modal -->
+     <DeleteModal 
+        :show="showDeleteModal"
+        @close="showDeleteModal = false"
+        @confirm="deleteVendor"
+    />
 </template>

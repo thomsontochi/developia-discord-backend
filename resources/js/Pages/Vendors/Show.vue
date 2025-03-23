@@ -4,6 +4,10 @@ import { Head, Link, useForm } from "@inertiajs/vue3";
 import { ref } from "vue";
 import PendingVendorCard from "@/Components/vendors/PendingVendorCard.vue";
 
+import { useToast } from "vue-toastification";
+
+const toast = useToast();
+
 const props = defineProps({
     vendor: Object,
 });
@@ -29,7 +33,13 @@ const updateStatus = (status, reason = '') => {
         status,
         reason
     }).post(route(`admin.vendors.${status}`, props.vendor.id), {
-        preserveScroll: true
+        preserveScroll: true,
+        onSuccess: () => {
+            toast.success(`Vendor ${status} successfully`);
+        },
+        onError: () => {
+            toast.error(`Failed to ${status} vendor`);
+        }
     });
 };
 
@@ -37,8 +47,11 @@ const approveVendor = () => {
     useForm().post(route("admin.vendors.approve", vendor.id), {
         preserveScroll: true,
         onSuccess: () => {
-            // Show success message or handle response
+            toast.success("Vendor approved successfully");
         },
+        onError: () => {
+            toast.error("Failed to approve vendor");
+        }
     });
 };
 
@@ -48,8 +61,12 @@ const rejectVendor = (reason) => {
     }).post(route("admin.vendors.reject", vendor.id), {
         preserveScroll: true,
         onSuccess: () => {
+            toast.success("Vendor rejected successfully");
             showRejectModal.value = false;
         },
+        onError: () => {
+            toast.error("Failed to reject vendor");
+        }
     });
 };
 </script>

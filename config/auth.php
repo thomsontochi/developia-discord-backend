@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\User;
 use App\Models\Vendor;
 
 return [
@@ -43,7 +44,7 @@ return [
             'provider' => 'users',
         ],
         'vendor' => [
-            'driver' => 'session',
+            'driver' => 'sanctum',
             'provider' => 'vendors',
         ],
     ],
@@ -68,7 +69,8 @@ return [
     'providers' => [
         'users' => [
             'driver' => 'eloquent',
-            'model' => env('AUTH_MODEL', App\Models\User::class),
+            'model' => User::class,
+            // 'model' => env('AUTH_MODEL', User::class),
         ],
         'vendors' => [
             'driver' => 'eloquent',

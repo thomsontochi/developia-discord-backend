@@ -21,7 +21,7 @@ return [
 
     // 'allowed_origins' => ['*'],
     // 'allowed_origins' => ['http://localhost:5174'],
-    'allowed_origins' => ['http://localhost:5174', 'http://discordecommercebackend.test'],
+    'allowed_origins' => ['http://localhost:5174','http://localhost:5173', 'http://discordecommercebackend.test'],
 
     'allowed_origins_patterns' => [],
 
